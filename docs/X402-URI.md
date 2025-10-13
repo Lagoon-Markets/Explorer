@@ -114,7 +114,15 @@ The `<base64 encoded PaymentRequirements from x402 specification>` is the base64
 }
 ```
 
+## Schemes for URI 
 
+The `URI` defines what protocol to use. There are four supported actions for x402:
+
+1. `https://` - HTTP protocol
+2. `a2a://` - agent-to-agent communication
+3. `mcp://` - MCP protocol
+
+For familiarity and ease of parsing with existing URL parsers, the `://` is also added as part of the schemes for `a2a` and `mcp` protocols.
 
 ## Considerations
 
