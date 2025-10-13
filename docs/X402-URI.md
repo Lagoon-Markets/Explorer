@@ -121,6 +121,7 @@ The `URI` defines what protocol to use. There are four supported actions for x40
 1. `https://` - HTTP protocol
 2. `a2a://` - agent-to-agent communication
 3. `mcp://` - MCP protocol
+4. `chat://` - a chatbot or user-to-user e2e chats
 
 For familiarity and ease of parsing with existing URL parsers, the `://` is also added as part of the schemes for `a2a` and `mcp` protocols.
 
