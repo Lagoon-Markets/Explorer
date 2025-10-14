@@ -1,2 +1,7 @@
 **/target
 /native/uniffi_out
+.devcontainer
+Cargo.lock
+.vscode
+**/Cargo.lock
+**/.vscode
