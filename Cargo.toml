@@ -1,5 +1,5 @@
 [workspace]
-members = ["native"]
+members = ["client", "common", "native", "server", "x402-uri"]
 
 resolver = "3"
 
@@ -8,5 +8,27 @@ authors = ["448-OG <superuser@448.africa>"]
 version = "0.1.0"
 license = "AGPL-3.0-only"
 edition = "2021"
-
 publish = false
+
+[workspace.dependencies]
+rusty-x402 = { git = "https://github.com/JamiiDao/x402.git", rev = "7bf52c6" }
+
+jzon = "0.12.5"
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.145"
+thiserror = "2.0.17"
+bincode = "1"
+bs58 = "0.5.1"
+solana-instruction = "2"
+solana-keypair = "=2"
+solana-pubkey = "=2"
+solana-sdk-ids = "=2"
+solana-signer = "=2"
+solana-system-interface = { version = "=1", features = ["bincode"] }
+solana-transaction = "=2"
+spl-associated-token-account = "7"
+spl-token = "8.0.0"
+spl-token-2022 = { version = "9.0.0" }
+base64ct = { version = "1.8.0", features = ["std"] }
+solana-message = { version = "2", features = ["bincode"] }
+solana-hash = "2"
