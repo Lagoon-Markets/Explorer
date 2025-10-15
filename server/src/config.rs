@@ -1,3 +1,5 @@
+use std::path::Path;
+
 use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
@@ -9,7 +11,10 @@ impl ServerConfig {
     pub fn parse() -> Self {
         use std::{fs::File, io::Read};
 
-        let mut file = File::open("secrets.toml")
+        let mut path = Path::new(std::env!("CARGO_WORKSPACE_DIR")).to_path_buf();
+        path.push("secrets.toml");
+
+        let mut file = File::open(path)
             .map_err(|error| panic!("{}. Error: {}", "Unable to open `secrets.toml` file", error))
             .unwrap();
         let mut contents = String::default();

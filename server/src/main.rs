@@ -13,6 +13,10 @@ pub use index_handler::*;
 mod allowed_assets;
 pub use allowed_assets::*;
 
+#[allow(clippy::redundant_closure)]
+pub(crate) static SERVER_CONFIG: once_cell::sync::Lazy<ServerConfig> =
+    once_cell::sync::Lazy::new(|| ServerConfig::parse());
+
 #[launch]
 fn rocket() -> _ {
     rocket::build().mount("/", routes![index, latest_newsletter])
