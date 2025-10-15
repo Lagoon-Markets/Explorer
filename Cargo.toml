@@ -32,3 +32,5 @@ spl-token-2022 = { version = "9.0.0" }
 base64ct = { version = "1.8.0", features = ["std"] }
 solana-message = { version = "2", features = ["bincode"] }
 solana-hash = "2"
+wallet-standard-base = "0.1.7"
+toml = "0.9.8"
