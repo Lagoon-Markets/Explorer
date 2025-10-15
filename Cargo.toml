@@ -12,6 +12,7 @@ publish = false
 
 [workspace.dependencies]
 rusty-x402 = { git = "https://github.com/JamiiDao/x402.git", rev = "7bf52c6" }
+common = { path = "./common" }
 
 jzon = "0.12.5"
 serde = { version = "1.0.228", features = ["derive"] }

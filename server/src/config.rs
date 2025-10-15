@@ -23,7 +23,13 @@ impl ServerConfig {
             })
             .unwrap();
 
-        toml::from_str::<Self>(&contents).unwrap()
+        let parsed_config = toml::from_str::<Self>(&contents).unwrap();
+
+        if parsed_config.facilitator_address().is_none() && !parsed_config.client_is_facilitator() {
+            panic!("There needs to be a facilitator. Set the `client_is_facilitator` to true or add a `facilitator` address to the config file")
+        }
+
+        parsed_config
     }
 
     pub fn resource_server_address(&self) -> &str {
