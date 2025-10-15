@@ -5,3 +5,4 @@ Cargo.lock
 .vscode
 **/Cargo.lock
 **/.vscode
+secrets.toml
