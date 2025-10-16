@@ -3,29 +3,38 @@ use std::borrow::Borrow;
 use camino::Utf8PathBuf;
 use redb::{Database, Error as RedbError, Key, ReadableDatabase, TableDefinition, Value};
 
+use crate::{NativeError, NativeResult, APP_STORAGE};
+
+pub type RedbResult<T> = Result<T, RedbError>;
+
 pub struct AppStorage {
     store: Database,
+    path: Utf8PathBuf,
 }
 
-type UserProfileSchema = TableDefinition<'static, &'static str, String>;
+type UserProfileSchema = TableDefinition<'static, &'static str, Vec<u8>>;
 type TasksSchema = TableDefinition<'static, &'static str, String>;
 type SubscriptionsSchema = TableDefinition<'static, &'static str, String>;
 
 impl AppStorage {
     pub const APP_DIR_PATH: &str = "lagoon_markets.redb";
 
-    const USER_PROFILE_TABLE: UserProfileSchema = UserProfileSchema::new("user_profile");
     const TASKS_TABLE: TasksSchema = TasksSchema::new("tasks");
     const SUBSCRIPTIONS_TABLE: SubscriptionsSchema = SubscriptionsSchema::new("subscriptions");
+
+    pub fn get_store<'a>() -> NativeResult<&'a AppStorage> {
+        APP_STORAGE.get().ok_or(NativeError::StoreIsNotInitialized)
+    }
 
     pub async fn init(app_dir_path: &str) -> Result<Self, RedbError> {
         let mut path = Utf8PathBuf::new();
         path.push(app_dir_path);
         path.push(Self::APP_DIR_PATH);
 
-        let store = blocking::unblock(move || Database::create(path)).await?;
+        let path_cloned = path.clone();
+        let store = blocking::unblock(move || Database::create(path_cloned)).await?;
 
-        Ok(Self { store })
+        Ok(Self { store, path })
     }
 
     pub fn set<'a, K: Key, V: Value>(
@@ -53,5 +62,18 @@ impl AppStorage {
         let table = read_txn.open_table(table)?;
 
         Ok(table.get(key)?)
+    }
+}
+
+impl AppStorage {
+    const USER_PROFILE_KEY: &str = "profile";
+    const USER_PROFILE_TABLE: UserProfileSchema = UserProfileSchema::new("user_profile");
+
+    pub async fn get_profile(&'static self) -> RedbResult<Option<Vec<u8>>> {
+        blocking::unblock(move || {
+            self.get(Self::USER_PROFILE_TABLE, Self::USER_PROFILE_KEY)
+                .map(|data| data.map(|inner| inner.value()))
+        })
+        .await
     }
 }
