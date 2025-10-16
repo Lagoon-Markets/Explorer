@@ -14,6 +14,12 @@ path = "uniffi-bindgen.rs"
 
 [dependencies]
 uniffi = { version = "0.29.4", features = ["cli"] }
+redb = "=3.1.0"
+camino = "1.2.1"
+thiserror.workspace = true
+async-fs = "2.2.0"
+futures-lite = "2.6.1"
+blocking = "1.6.2"
 
 [build-dependencies]
 uniffi = { version = "0.29.4", features = ["build"] }

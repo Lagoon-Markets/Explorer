@@ -30,6 +30,13 @@ import java.nio.CharBuffer
 import java.nio.charset.CodingErrorAction
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.coroutines.resume
+import kotlinx.coroutines.CancellableContinuation
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
 
 // This is a helper for safely working with byte buffers returned from the Rust code.
 // A rust-owned buffer is represented by its capacity, its current length, and a
@@ -713,6 +720,8 @@ internal interface UniffiForeignFutureCompleteVoid : com.sun.jna.Callback {
 
 
 
+
+
 // For large crates we prevent `MethodTooLargeException` (see #2340)
 // N.B. the name of the extension is very misleading, since it is 
 // rather `InterfaceTooLargeException`, caused by too many methods 
@@ -729,6 +738,8 @@ internal interface UniffiForeignFutureCompleteVoid : com.sun.jna.Callback {
 internal interface IntegrityCheckingUniffiLib : Library {
     // Integrity check functions only
     fun uniffi_explorer_native_checksum_func_rustffi_ffi_version(
+): Short
+fun uniffi_explorer_native_checksum_func_rustffi_init_db(
 ): Short
 fun ffi_explorer_native_uniffi_contract_version(
 ): Int
@@ -777,6 +788,8 @@ internal interface UniffiLib : Library {
     // FFI functions
     fun uniffi_explorer_native_fn_func_rustffi_ffi_version(uniffi_out_err: UniffiRustCallStatus, 
 ): RustBuffer.ByValue
+fun uniffi_explorer_native_fn_func_rustffi_init_db(`appDirPath`: RustBuffer.ByValue,
+): Long
 fun ffi_explorer_native_rustbuffer_alloc(`size`: Long,uniffi_out_err: UniffiRustCallStatus, 
 ): RustBuffer.ByValue
 fun ffi_explorer_native_rustbuffer_from_bytes(`bytes`: ForeignBytes.ByValue,uniffi_out_err: UniffiRustCallStatus, 
@@ -906,6 +919,9 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if (lib.uniffi_explorer_native_checksum_func_rustffi_ffi_version() != 31370.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if (lib.uniffi_explorer_native_checksum_func_rustffi_init_db() != 59145.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
 }
 
 /**
@@ -916,6 +932,46 @@ public fun uniffiEnsureInitialized() {
 }
 
 // Async support
+// Async return type handlers
+
+internal const val UNIFFI_RUST_FUTURE_POLL_READY = 0.toByte()
+internal const val UNIFFI_RUST_FUTURE_POLL_MAYBE_READY = 1.toByte()
+
+internal val uniffiContinuationHandleMap = UniffiHandleMap<CancellableContinuation<Byte>>()
+
+// FFI type for Rust future continuations
+internal object uniffiRustFutureContinuationCallbackImpl: UniffiRustFutureContinuationCallback {
+    override fun callback(data: Long, pollResult: Byte) {
+        uniffiContinuationHandleMap.remove(data).resume(pollResult)
+    }
+}
+
+internal suspend fun<T, F, E: kotlin.Exception> uniffiRustCallAsync(
+    rustFuture: Long,
+    pollFunc: (Long, UniffiRustFutureContinuationCallback, Long) -> Unit,
+    completeFunc: (Long, UniffiRustCallStatus) -> F,
+    freeFunc: (Long) -> Unit,
+    liftFunc: (F) -> T,
+    errorHandler: UniffiRustCallStatusErrorHandler<E>
+): T {
+    try {
+        do {
+            val pollResult = suspendCancellableCoroutine<Byte> { continuation ->
+                pollFunc(
+                    rustFuture,
+                    uniffiRustFutureContinuationCallbackImpl,
+                    uniffiContinuationHandleMap.insert(continuation)
+                )
+            }
+        } while (pollResult != UNIFFI_RUST_FUTURE_POLL_READY);
+
+        return liftFunc(
+            uniffiRustCallWithError(errorHandler, { status -> completeFunc(rustFuture, status) })
+        )
+    } finally {
+        freeFunc(rustFuture)
+    }
+}
 
 // Public interface members begin here.
 
@@ -1040,7 +1096,74 @@ public object FfiConverterString: FfiConverter<String, RustBuffer.ByValue> {
         buf.putInt(byteBuf.limit())
         buf.put(byteBuf)
     }
-} fun `rustffiFfiVersion`(): kotlin.String {
+}
+
+
+
+
+
+sealed class NativeException: kotlin.Exception() {
+    
+    class InitKv(
+        
+        val v1: kotlin.String
+        ) : NativeException() {
+        override val message
+            get() = "v1=${ v1 }"
+    }
+    
+
+    companion object ErrorHandler : UniffiRustCallStatusErrorHandler<NativeException> {
+        override fun lift(error_buf: RustBuffer.ByValue): NativeException = FfiConverterTypeNativeError.lift(error_buf)
+    }
+
+    
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeNativeError : FfiConverterRustBuffer<NativeException> {
+    override fun read(buf: ByteBuffer): NativeException {
+        
+
+        return when(buf.getInt()) {
+            1 -> NativeException.InitKv(
+                FfiConverterString.read(buf),
+                )
+            else -> throw RuntimeException("invalid error enum value, something is very wrong!!")
+        }
+    }
+
+    override fun allocationSize(value: NativeException): ULong {
+        return when(value) {
+            is NativeException.InitKv -> (
+                // Add the size for the Int that specifies the variant plus the size needed for all fields
+                4UL
+                + FfiConverterString.allocationSize(value.v1)
+            )
+        }
+    }
+
+    override fun write(value: NativeException, buf: ByteBuffer) {
+        when(value) {
+            is NativeException.InitKv -> {
+                buf.putInt(1)
+                FfiConverterString.write(value.v1, buf)
+                Unit
+            }
+        }.let { /* this makes the `when` an expression, which ensures it is exhaustive */ }
+    }
+
+}
+
+
+
+
+
+
+
+ fun `rustffiFfiVersion`(): kotlin.String {
             return FfiConverterString.lift(
     uniffiRustCall() { _status ->
     UniffiLib.INSTANCE.uniffi_explorer_native_fn_func_rustffi_ffi_version(
@@ -1049,5 +1172,21 @@ public object FfiConverterString: FfiConverter<String, RustBuffer.ByValue> {
     )
     }
     
+
+    @Throws(NativeException::class)
+    @Suppress("ASSIGNED_BUT_NEVER_ACCESSED_VARIABLE")
+     suspend fun `rustffiInitDb`(`appDirPath`: kotlin.String) {
+        return uniffiRustCallAsync(
+        UniffiLib.INSTANCE.uniffi_explorer_native_fn_func_rustffi_init_db(FfiConverterString.lower(`appDirPath`),),
+        { future, callback, continuation -> UniffiLib.INSTANCE.ffi_explorer_native_rust_future_poll_void(future, callback, continuation) },
+        { future, continuation -> UniffiLib.INSTANCE.ffi_explorer_native_rust_future_complete_void(future, continuation) },
+        { future -> UniffiLib.INSTANCE.ffi_explorer_native_rust_future_free_void(future) },
+        // lift function
+        { Unit },
+        
+        // Error FFI converter
+        NativeException.ErrorHandler,
+    )
+    }
 
 
