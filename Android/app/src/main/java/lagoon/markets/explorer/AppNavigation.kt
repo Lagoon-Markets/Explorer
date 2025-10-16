@@ -1,5 +1,7 @@
 package lagoon.markets.explorer
 
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.navigation.compose.NavHost
@@ -11,10 +13,10 @@ import kotlinx.serialization.Serializable
 @Serializable
 object HomeRoute
 
-
 @Composable
 fun AppNavigation(
     appStateViewModel: AppStateViewModel,
+    paddingValues: PaddingValues
 ) {
     val navController = rememberNavController()
 
@@ -25,7 +27,11 @@ fun AppNavigation(
     }
 
     NavHost(navController = navController, startDestination = HomeRoute) {
-        composable<HomeRoute> { CheckSiws() }
+        composable<HomeRoute> { Home() }
     }
 }
 
+@Composable
+fun Home() {
+    Text("HOMEEEE")
+}

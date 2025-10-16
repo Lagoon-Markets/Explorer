@@ -17,6 +17,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import lagoon.markets.explorer.auth.CheckSiws
 import lagoon.markets.explorer.ui.theme.brushDarkVerticalGradient
 import lagoon.markets.rustffiInitDb
 
@@ -63,7 +64,7 @@ fun InitApp(
             }
 
             initResult?.isSuccess == true -> {
-                Text("Initialized successfully")
+                CheckSiws(paddingValues)
             }
 
             else -> { // initResult != null && isFailure

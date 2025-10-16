@@ -722,6 +722,8 @@ internal interface UniffiForeignFutureCompleteVoid : com.sun.jna.Callback {
 
 
 
+
+
 // For large crates we prevent `MethodTooLargeException` (see #2340)
 // N.B. the name of the extension is very misleading, since it is 
 // rather `InterfaceTooLargeException`, caused by too many methods 
@@ -738,6 +740,8 @@ internal interface UniffiForeignFutureCompleteVoid : com.sun.jna.Callback {
 internal interface IntegrityCheckingUniffiLib : Library {
     // Integrity check functions only
     fun uniffi_explorer_native_checksum_func_rustffi_ffi_version(
+): Short
+fun uniffi_explorer_native_checksum_func_rustffi_get_profile(
 ): Short
 fun uniffi_explorer_native_checksum_func_rustffi_init_db(
 ): Short
@@ -788,6 +792,8 @@ internal interface UniffiLib : Library {
     // FFI functions
     fun uniffi_explorer_native_fn_func_rustffi_ffi_version(uniffi_out_err: UniffiRustCallStatus, 
 ): RustBuffer.ByValue
+fun uniffi_explorer_native_fn_func_rustffi_get_profile(
+): Long
 fun uniffi_explorer_native_fn_func_rustffi_init_db(`appDirPath`: RustBuffer.ByValue,
 ): Long
 fun ffi_explorer_native_rustbuffer_alloc(`size`: Long,uniffi_out_err: UniffiRustCallStatus, 
@@ -917,6 +923,9 @@ private fun uniffiCheckContractApiVersion(lib: IntegrityCheckingUniffiLib) {
 @Suppress("UNUSED_PARAMETER")
 private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if (lib.uniffi_explorer_native_checksum_func_rustffi_ffi_version() != 31370.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_explorer_native_checksum_func_rustffi_get_profile() != 40031.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_explorer_native_checksum_func_rustffi_init_db() != 59145.toShort()) {
@@ -1100,6 +1109,66 @@ public object FfiConverterString: FfiConverter<String, RustBuffer.ByValue> {
 
 
 
+data class Base58String (
+    var `address`: kotlin.String
+) {
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeBase58String: FfiConverterRustBuffer<Base58String> {
+    override fun read(buf: ByteBuffer): Base58String {
+        return Base58String(
+            FfiConverterString.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: Base58String) = (
+            FfiConverterString.allocationSize(value.`address`)
+    )
+
+    override fun write(value: Base58String, buf: ByteBuffer) {
+            FfiConverterString.write(value.`address`, buf)
+    }
+}
+
+
+
+data class UserProfile (
+    var `name`: kotlin.String, 
+    var `publicKey`: Base58String
+) {
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeUserProfile: FfiConverterRustBuffer<UserProfile> {
+    override fun read(buf: ByteBuffer): UserProfile {
+        return UserProfile(
+            FfiConverterString.read(buf),
+            FfiConverterTypeBase58String.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: UserProfile) = (
+            FfiConverterString.allocationSize(value.`name`) +
+            FfiConverterTypeBase58String.allocationSize(value.`publicKey`)
+    )
+
+    override fun write(value: UserProfile, buf: ByteBuffer) {
+            FfiConverterString.write(value.`name`, buf)
+            FfiConverterTypeBase58String.write(value.`publicKey`, buf)
+    }
+}
+
+
+
 
 
 sealed class NativeException: kotlin.Exception() {
@@ -1110,6 +1179,62 @@ sealed class NativeException: kotlin.Exception() {
         ) : NativeException() {
         override val message
             get() = "v1=${ v1 }"
+    }
+    
+    class VectorNot32BytesLong(
+        ) : NativeException() {
+        override val message
+            get() = ""
+    }
+    
+    class VectorNot64BytesLong(
+        ) : NativeException() {
+        override val message
+            get() = ""
+    }
+    
+    class PackingUserProfile(
+        ) : NativeException() {
+        override val message
+            get() = ""
+    }
+    
+    class UnpackingUserProfile(
+        ) : NativeException() {
+        override val message
+            get() = ""
+    }
+    
+    class UnableToSetGlobalStorageObject(
+        ) : NativeException() {
+        override val message
+            get() = ""
+    }
+    
+    class StoreIsNotInitialized(
+        ) : NativeException() {
+        override val message
+            get() = ""
+    }
+    
+    class StorageException(
+        
+        val v1: kotlin.String
+        ) : NativeException() {
+        override val message
+            get() = "v1=${ v1 }"
+    }
+    
+    class InvalidBase58String(
+        ) : NativeException() {
+        override val message
+            get() = ""
+    }
+    
+    class InvalidBase58StringIsNot32BytesLength(
+        ) : NativeException() {
+        override val message
+            get() = ""
     }
     
 
@@ -1131,6 +1256,17 @@ public object FfiConverterTypeNativeError : FfiConverterRustBuffer<NativeExcepti
             1 -> NativeException.InitKv(
                 FfiConverterString.read(buf),
                 )
+            2 -> NativeException.VectorNot32BytesLong()
+            3 -> NativeException.VectorNot64BytesLong()
+            4 -> NativeException.PackingUserProfile()
+            5 -> NativeException.UnpackingUserProfile()
+            6 -> NativeException.UnableToSetGlobalStorageObject()
+            7 -> NativeException.StoreIsNotInitialized()
+            8 -> NativeException.StorageException(
+                FfiConverterString.read(buf),
+                )
+            9 -> NativeException.InvalidBase58String()
+            10 -> NativeException.InvalidBase58StringIsNot32BytesLength()
             else -> throw RuntimeException("invalid error enum value, something is very wrong!!")
         }
     }
@@ -1142,6 +1278,43 @@ public object FfiConverterTypeNativeError : FfiConverterRustBuffer<NativeExcepti
                 4UL
                 + FfiConverterString.allocationSize(value.v1)
             )
+            is NativeException.VectorNot32BytesLong -> (
+                // Add the size for the Int that specifies the variant plus the size needed for all fields
+                4UL
+            )
+            is NativeException.VectorNot64BytesLong -> (
+                // Add the size for the Int that specifies the variant plus the size needed for all fields
+                4UL
+            )
+            is NativeException.PackingUserProfile -> (
+                // Add the size for the Int that specifies the variant plus the size needed for all fields
+                4UL
+            )
+            is NativeException.UnpackingUserProfile -> (
+                // Add the size for the Int that specifies the variant plus the size needed for all fields
+                4UL
+            )
+            is NativeException.UnableToSetGlobalStorageObject -> (
+                // Add the size for the Int that specifies the variant plus the size needed for all fields
+                4UL
+            )
+            is NativeException.StoreIsNotInitialized -> (
+                // Add the size for the Int that specifies the variant plus the size needed for all fields
+                4UL
+            )
+            is NativeException.StorageException -> (
+                // Add the size for the Int that specifies the variant plus the size needed for all fields
+                4UL
+                + FfiConverterString.allocationSize(value.v1)
+            )
+            is NativeException.InvalidBase58String -> (
+                // Add the size for the Int that specifies the variant plus the size needed for all fields
+                4UL
+            )
+            is NativeException.InvalidBase58StringIsNot32BytesLength -> (
+                // Add the size for the Int that specifies the variant plus the size needed for all fields
+                4UL
+            )
         }
     }
 
@@ -1152,9 +1325,78 @@ public object FfiConverterTypeNativeError : FfiConverterRustBuffer<NativeExcepti
                 FfiConverterString.write(value.v1, buf)
                 Unit
             }
+            is NativeException.VectorNot32BytesLong -> {
+                buf.putInt(2)
+                Unit
+            }
+            is NativeException.VectorNot64BytesLong -> {
+                buf.putInt(3)
+                Unit
+            }
+            is NativeException.PackingUserProfile -> {
+                buf.putInt(4)
+                Unit
+            }
+            is NativeException.UnpackingUserProfile -> {
+                buf.putInt(5)
+                Unit
+            }
+            is NativeException.UnableToSetGlobalStorageObject -> {
+                buf.putInt(6)
+                Unit
+            }
+            is NativeException.StoreIsNotInitialized -> {
+                buf.putInt(7)
+                Unit
+            }
+            is NativeException.StorageException -> {
+                buf.putInt(8)
+                FfiConverterString.write(value.v1, buf)
+                Unit
+            }
+            is NativeException.InvalidBase58String -> {
+                buf.putInt(9)
+                Unit
+            }
+            is NativeException.InvalidBase58StringIsNot32BytesLength -> {
+                buf.putInt(10)
+                Unit
+            }
         }.let { /* this makes the `when` an expression, which ensures it is exhaustive */ }
     }
 
+}
+
+
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterOptionalTypeUserProfile: FfiConverterRustBuffer<UserProfile?> {
+    override fun read(buf: ByteBuffer): UserProfile? {
+        if (buf.get().toInt() == 0) {
+            return null
+        }
+        return FfiConverterTypeUserProfile.read(buf)
+    }
+
+    override fun allocationSize(value: UserProfile?): ULong {
+        if (value == null) {
+            return 1UL
+        } else {
+            return 1UL + FfiConverterTypeUserProfile.allocationSize(value)
+        }
+    }
+
+    override fun write(value: UserProfile?, buf: ByteBuffer) {
+        if (value == null) {
+            buf.put(0)
+        } else {
+            buf.put(1)
+            FfiConverterTypeUserProfile.write(value, buf)
+        }
+    }
 }
 
 
@@ -1172,6 +1414,21 @@ public object FfiConverterTypeNativeError : FfiConverterRustBuffer<NativeExcepti
     )
     }
     
+
+    @Throws(NativeException::class)
+    @Suppress("ASSIGNED_BUT_NEVER_ACCESSED_VARIABLE")
+     suspend fun `rustffiGetProfile`() : UserProfile? {
+        return uniffiRustCallAsync(
+        UniffiLib.INSTANCE.uniffi_explorer_native_fn_func_rustffi_get_profile(),
+        { future, callback, continuation -> UniffiLib.INSTANCE.ffi_explorer_native_rust_future_poll_rust_buffer(future, callback, continuation) },
+        { future, continuation -> UniffiLib.INSTANCE.ffi_explorer_native_rust_future_complete_rust_buffer(future, continuation) },
+        { future -> UniffiLib.INSTANCE.ffi_explorer_native_rust_future_free_rust_buffer(future) },
+        // lift function
+        { FfiConverterOptionalTypeUserProfile.lift(it) },
+        // Error FFI converter
+        NativeException.ErrorHandler,
+    )
+    }
 
     @Throws(NativeException::class)
     @Suppress("ASSIGNED_BUT_NEVER_ACCESSED_VARIABLE")

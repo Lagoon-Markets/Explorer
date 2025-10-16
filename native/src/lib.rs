@@ -9,4 +9,7 @@ pub(crate) use storage::*;
 mod errors;
 pub(crate) use errors::*;
 
+mod types;
+pub(crate) use types::*;
+
 uniffi::setup_scaffolding!("rustFFI");
