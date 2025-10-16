@@ -2,10 +2,13 @@ package lagoon.markets.explorer.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-val Purple80 = Color(0xFFD0BCFF)
-val PurpleGrey80 = Color(0xFFCCC2DC)
-val Pink80 = Color(0xFFEFB8C8)
+val RussianViolet = Color(0xFF3a1951)
+val AmericanPurple = Color(0xFF412456)
+val EnglishViolet = Color(0xFF4D3062)
+val PurpleMountainMajesty = Color(0xFF966AB6)
+val Purple = Color(0xFFA525FF)
+val HanPurple = Color(0xFF5A0CF3)
+val Licorice = Color(0xFF14001A)
 
-val Purple40 = Color(0xFF6650a4)
-val PurpleGrey40 = Color(0xFF625b71)
-val Pink40 = Color(0xFF7D5260)
+val Black = Color(0xFF000000)
+val White = Color(0xFFDFDFDF)

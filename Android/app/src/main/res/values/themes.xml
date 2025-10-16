@@ -1,5 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <style name="Theme.LagoonExplorer" parent="android:Theme.Material.Light.NoActionBar" />
+<style name="Theme.LagoonExplorerSplashScreen" parent="Theme.SplashScreen">
+    <item name="windowSplashScreenBackground">@color/licorice</item>
+    <item name="windowSplashScreenAnimatedIcon">@drawable/splashscreen_icon</item>
+    <item name="postSplashScreenTheme">@style/Theme.LagoonExplorer</item>
+</style>
+
+<style name="Theme.LagoonExplorer" parent="android:Theme.Material.Light.NoActionBar" />
 </resources>
