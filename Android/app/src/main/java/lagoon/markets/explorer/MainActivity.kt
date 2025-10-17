@@ -9,12 +9,15 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Modifier
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import com.solana.mobilewalletadapter.clientlib.ActivityResultSender
 import lagoon.markets.explorer.ui.theme.LagoonMarketsTheme
 
 class MainActivity : ComponentActivity() {
     init {
         System.loadLibrary("explorer_native")
     }
+
+    val sender = ActivityResultSender(this)
 
     private val appStateViewModel: AppStateViewModel by viewModels()
 
@@ -30,7 +33,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier
                         .fillMaxSize()
                 ) { innerPadding ->
-                    InitApp(viewModel = appStateViewModel, paddingValues = innerPadding)
+                    InitApp(viewModel = appStateViewModel, sender, paddingValues = innerPadding)
                 }
             }
         }

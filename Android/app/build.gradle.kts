@@ -1,4 +1,3 @@
-
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -63,6 +62,7 @@ dependencies {
     implementation("net.java.dev.jna:jna:5.18.1@aar")
     implementation("androidx.navigation:navigation-compose:2.9.5")
     implementation("androidx.core:core-splashscreen:1.0.0")
+    implementation("com.solanamobile:mobile-wallet-adapter-clientlib-ktx:2.0.3")
 
 //    // ViewModel
 //    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.9.4")

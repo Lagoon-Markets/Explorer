@@ -22,6 +22,10 @@ pub enum NativeError {
     InvalidBase58String,
     #[error("The base58 was valid but it does not decode to a length of 32 bytes")]
     InvalidBase58StringIsNot32BytesLength,
+    #[error("Unable to serialize `SiwsAuthResult` to bytes")]
+    SerializeSiwsAuthResultToBytes,
+    #[error("Unable to deserialize `SiwsAuthResult` from bytes")]
+    DeserializeSiwsAuthResultToBytes,
 }
 
 impl From<redb::Error> for NativeError {

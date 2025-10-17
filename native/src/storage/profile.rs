@@ -1,4 +1,3 @@
-use uniffi::Record;
 use wincode::{SchemaRead, SchemaWrite};
 
 use crate::{AppStorage, Base58String, NativeError, NativeResult};
