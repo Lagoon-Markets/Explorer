@@ -48,8 +48,8 @@ fun CheckSiws(paddingValues: PaddingValues) {
             }
 
             LoadingState.Loaded -> {
-                userProfile.value?.publicKey?.address?.let {
-                    Text(it)
+                userProfile.value?.let {
+                    Text(it.publicKey.address)
                 } ?: Text("User profile not found")
             }
         }
