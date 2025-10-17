@@ -3,7 +3,7 @@ use std::borrow::Borrow;
 use camino::Utf8PathBuf;
 use redb::{Database, Error as RedbError, Key, ReadableDatabase, TableDefinition, Value};
 
-use crate::{NativeError, NativeResult, APP_STORAGE};
+use crate::{NativeError, NativeResult, SiwsAuthResult, APP_STORAGE};
 
 pub type RedbResult<T> = Result<T, RedbError>;
 
@@ -13,6 +13,7 @@ pub struct AppStorage {
 }
 
 type UserProfileSchema = TableDefinition<'static, &'static str, Vec<u8>>;
+type AuthSchema = TableDefinition<'static, &'static str, Vec<u8>>;
 type TasksSchema = TableDefinition<'static, &'static str, String>;
 type SubscriptionsSchema = TableDefinition<'static, &'static str, String>;
 
@@ -75,5 +76,28 @@ impl AppStorage {
                 .map(|data| data.map(|inner| inner.value()))
         })
         .await
+    }
+}
+
+impl AppStorage {
+    const AUTH_KEY: &str = "auth";
+    const AUTH_TABLE: AuthSchema = AuthSchema::new("user_auth");
+
+    pub fn set_auth(&self, auth: SiwsAuthResult) -> NativeResult<()> {
+        let auth_bytes =
+            wincode::serialize(&auth).or(Err(NativeError::SerializeSiwsAuthResultToBytes))?;
+
+        Ok(self.set(Self::AUTH_TABLE, Self::AUTH_KEY, auth_bytes)?)
+    }
+
+    pub fn get_auth(&self) -> NativeResult<Option<SiwsAuthResult>> {
+        let auth_bytes = self.get(Self::AUTH_TABLE, Self::AUTH_KEY)?;
+
+        auth_bytes
+            .map(|auth_bytes_inner| {
+                wincode::deserialize(&auth_bytes_inner.value())
+                    .or(Err(NativeError::DeserializeSiwsAuthResultToBytes))
+            })
+            .transpose()
     }
 }

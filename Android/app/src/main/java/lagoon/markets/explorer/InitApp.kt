@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.solana.mobilewalletadapter.clientlib.ActivityResultSender
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -48,6 +49,7 @@ class AppStateViewModel(application: Application) : AndroidViewModel(application
 @Composable
 fun InitApp(
     viewModel: AppStateViewModel = viewModel(),
+    sender: ActivityResultSender,
     paddingValues: PaddingValues
 ) {
     val initResult by viewModel.appState.collectAsState() // Result<Unit>?
@@ -64,7 +66,7 @@ fun InitApp(
             }
 
             initResult?.isSuccess == true -> {
-                CheckSiws(paddingValues)
+                CheckSiws(sender, paddingValues)
             }
 
             else -> { // initResult != null && isFailure

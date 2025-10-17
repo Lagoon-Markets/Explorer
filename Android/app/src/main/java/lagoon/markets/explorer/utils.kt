@@ -22,6 +22,12 @@ enum class LoadingState {
     Loaded
 }
 
+enum class ScreenState {
+    Initial,
+    Processing,
+    Completed
+}
+
 @Composable
 fun AppLinearLoader() {
     LinearProgressIndicator(

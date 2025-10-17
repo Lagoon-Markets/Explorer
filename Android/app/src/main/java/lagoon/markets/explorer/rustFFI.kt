@@ -724,6 +724,10 @@ internal interface UniffiForeignFutureCompleteVoid : com.sun.jna.Callback {
 
 
 
+
+
+
+
 // For large crates we prevent `MethodTooLargeException` (see #2340)
 // N.B. the name of the extension is very misleading, since it is 
 // rather `InterfaceTooLargeException`, caused by too many methods 
@@ -741,9 +745,13 @@ internal interface IntegrityCheckingUniffiLib : Library {
     // Integrity check functions only
     fun uniffi_explorer_native_checksum_func_rustffi_ffi_version(
 ): Short
+fun uniffi_explorer_native_checksum_func_rustffi_get_auth(
+): Short
 fun uniffi_explorer_native_checksum_func_rustffi_get_profile(
 ): Short
 fun uniffi_explorer_native_checksum_func_rustffi_init_db(
+): Short
+fun uniffi_explorer_native_checksum_func_rustffi_siws(
 ): Short
 fun ffi_explorer_native_uniffi_contract_version(
 ): Int
@@ -792,10 +800,14 @@ internal interface UniffiLib : Library {
     // FFI functions
     fun uniffi_explorer_native_fn_func_rustffi_ffi_version(uniffi_out_err: UniffiRustCallStatus, 
 ): RustBuffer.ByValue
+fun uniffi_explorer_native_fn_func_rustffi_get_auth(uniffi_out_err: UniffiRustCallStatus, 
+): RustBuffer.ByValue
 fun uniffi_explorer_native_fn_func_rustffi_get_profile(
 ): Long
 fun uniffi_explorer_native_fn_func_rustffi_init_db(`appDirPath`: RustBuffer.ByValue,
 ): Long
+fun uniffi_explorer_native_fn_func_rustffi_siws(`authData`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+): RustBuffer.ByValue
 fun ffi_explorer_native_rustbuffer_alloc(`size`: Long,uniffi_out_err: UniffiRustCallStatus, 
 ): RustBuffer.ByValue
 fun ffi_explorer_native_rustbuffer_from_bytes(`bytes`: ForeignBytes.ByValue,uniffi_out_err: UniffiRustCallStatus, 
@@ -925,10 +937,16 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if (lib.uniffi_explorer_native_checksum_func_rustffi_ffi_version() != 31370.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if (lib.uniffi_explorer_native_checksum_func_rustffi_get_auth() != 9158.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_explorer_native_checksum_func_rustffi_get_profile() != 40031.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_explorer_native_checksum_func_rustffi_init_db() != 59145.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_explorer_native_checksum_func_rustffi_siws() != 23166.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
 }
@@ -1053,6 +1071,29 @@ object NoPointer
 /**
  * @suppress
  */
+public object FfiConverterByte: FfiConverter<Byte, Byte> {
+    override fun lift(value: Byte): Byte {
+        return value
+    }
+
+    override fun read(buf: ByteBuffer): Byte {
+        return buf.get()
+    }
+
+    override fun lower(value: Byte): Byte {
+        return value
+    }
+
+    override fun allocationSize(value: Byte) = 1UL
+
+    override fun write(value: Byte, buf: ByteBuffer) {
+        buf.put(value)
+    }
+}
+
+/**
+ * @suppress
+ */
 public object FfiConverterString: FfiConverter<String, RustBuffer.ByValue> {
     // Note: we don't inherit from FfiConverterRustBuffer, because we use a
     // special encoding when lowering/lifting.  We can use `RustBuffer.len` to
@@ -1132,6 +1173,50 @@ public object FfiConverterTypeBase58String: FfiConverterRustBuffer<Base58String>
 
     override fun write(value: Base58String, buf: ByteBuffer) {
             FfiConverterString.write(value.`address`, buf)
+    }
+}
+
+
+
+data class SiwsFfiAuthResult (
+    var `publicKey`: List<kotlin.Byte>, 
+    var `signedMessage`: List<kotlin.Byte>, 
+    var `signature`: List<kotlin.Byte>, 
+    var `signatureType`: kotlin.String, 
+    var `authToken`: kotlin.String
+) {
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeSiwsFfiAuthResult: FfiConverterRustBuffer<SiwsFfiAuthResult> {
+    override fun read(buf: ByteBuffer): SiwsFfiAuthResult {
+        return SiwsFfiAuthResult(
+            FfiConverterSequenceByte.read(buf),
+            FfiConverterSequenceByte.read(buf),
+            FfiConverterSequenceByte.read(buf),
+            FfiConverterString.read(buf),
+            FfiConverterString.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: SiwsFfiAuthResult) = (
+            FfiConverterSequenceByte.allocationSize(value.`publicKey`) +
+            FfiConverterSequenceByte.allocationSize(value.`signedMessage`) +
+            FfiConverterSequenceByte.allocationSize(value.`signature`) +
+            FfiConverterString.allocationSize(value.`signatureType`) +
+            FfiConverterString.allocationSize(value.`authToken`)
+    )
+
+    override fun write(value: SiwsFfiAuthResult, buf: ByteBuffer) {
+            FfiConverterSequenceByte.write(value.`publicKey`, buf)
+            FfiConverterSequenceByte.write(value.`signedMessage`, buf)
+            FfiConverterSequenceByte.write(value.`signature`, buf)
+            FfiConverterString.write(value.`signatureType`, buf)
+            FfiConverterString.write(value.`authToken`, buf)
     }
 }
 
@@ -1237,6 +1322,18 @@ sealed class NativeException: kotlin.Exception() {
             get() = ""
     }
     
+    class SerializeSiwsAuthResultToBytes(
+        ) : NativeException() {
+        override val message
+            get() = ""
+    }
+    
+    class DeserializeSiwsAuthResultToBytes(
+        ) : NativeException() {
+        override val message
+            get() = ""
+    }
+    
 
     companion object ErrorHandler : UniffiRustCallStatusErrorHandler<NativeException> {
         override fun lift(error_buf: RustBuffer.ByValue): NativeException = FfiConverterTypeNativeError.lift(error_buf)
@@ -1267,6 +1364,8 @@ public object FfiConverterTypeNativeError : FfiConverterRustBuffer<NativeExcepti
                 )
             9 -> NativeException.InvalidBase58String()
             10 -> NativeException.InvalidBase58StringIsNot32BytesLength()
+            11 -> NativeException.SerializeSiwsAuthResultToBytes()
+            12 -> NativeException.DeserializeSiwsAuthResultToBytes()
             else -> throw RuntimeException("invalid error enum value, something is very wrong!!")
         }
     }
@@ -1312,6 +1411,14 @@ public object FfiConverterTypeNativeError : FfiConverterRustBuffer<NativeExcepti
                 4UL
             )
             is NativeException.InvalidBase58StringIsNot32BytesLength -> (
+                // Add the size for the Int that specifies the variant plus the size needed for all fields
+                4UL
+            )
+            is NativeException.SerializeSiwsAuthResultToBytes -> (
+                // Add the size for the Int that specifies the variant plus the size needed for all fields
+                4UL
+            )
+            is NativeException.DeserializeSiwsAuthResultToBytes -> (
                 // Add the size for the Int that specifies the variant plus the size needed for all fields
                 4UL
             )
@@ -1362,9 +1469,49 @@ public object FfiConverterTypeNativeError : FfiConverterRustBuffer<NativeExcepti
                 buf.putInt(10)
                 Unit
             }
+            is NativeException.SerializeSiwsAuthResultToBytes -> {
+                buf.putInt(11)
+                Unit
+            }
+            is NativeException.DeserializeSiwsAuthResultToBytes -> {
+                buf.putInt(12)
+                Unit
+            }
         }.let { /* this makes the `when` an expression, which ensures it is exhaustive */ }
     }
 
+}
+
+
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterOptionalString: FfiConverterRustBuffer<kotlin.String?> {
+    override fun read(buf: ByteBuffer): kotlin.String? {
+        if (buf.get().toInt() == 0) {
+            return null
+        }
+        return FfiConverterString.read(buf)
+    }
+
+    override fun allocationSize(value: kotlin.String?): ULong {
+        if (value == null) {
+            return 1UL
+        } else {
+            return 1UL + FfiConverterString.allocationSize(value)
+        }
+    }
+
+    override fun write(value: kotlin.String?, buf: ByteBuffer) {
+        if (value == null) {
+            buf.put(0)
+        } else {
+            buf.put(1)
+            FfiConverterString.write(value, buf)
+        }
+    }
 }
 
 
@@ -1402,6 +1549,34 @@ public object FfiConverterOptionalTypeUserProfile: FfiConverterRustBuffer<UserPr
 
 
 
+/**
+ * @suppress
+ */
+public object FfiConverterSequenceByte: FfiConverterRustBuffer<List<kotlin.Byte>> {
+    override fun read(buf: ByteBuffer): List<kotlin.Byte> {
+        val len = buf.getInt()
+        return List<kotlin.Byte>(len) {
+            FfiConverterByte.read(buf)
+        }
+    }
+
+    override fun allocationSize(value: List<kotlin.Byte>): ULong {
+        val sizeForLength = 4UL
+        val sizeForItems = value.map { FfiConverterByte.allocationSize(it) }.sum()
+        return sizeForLength + sizeForItems
+    }
+
+    override fun write(value: List<kotlin.Byte>, buf: ByteBuffer) {
+        buf.putInt(value.size)
+        value.iterator().forEach {
+            FfiConverterByte.write(it, buf)
+        }
+    }
+}
+
+
+
+
 
 
 
@@ -1409,6 +1584,16 @@ public object FfiConverterOptionalTypeUserProfile: FfiConverterRustBuffer<UserPr
             return FfiConverterString.lift(
     uniffiRustCall() { _status ->
     UniffiLib.INSTANCE.uniffi_explorer_native_fn_func_rustffi_ffi_version(
+        _status)
+}
+    )
+    }
+    
+
+    @Throws(NativeException::class) fun `rustffiGetAuth`(): kotlin.String? {
+            return FfiConverterOptionalString.lift(
+    uniffiRustCallWithError(NativeException) { _status ->
+    UniffiLib.INSTANCE.uniffi_explorer_native_fn_func_rustffi_get_auth(
         _status)
 }
     )
@@ -1445,5 +1630,15 @@ public object FfiConverterOptionalTypeUserProfile: FfiConverterRustBuffer<UserPr
         NativeException.ErrorHandler,
     )
     }
+
+    @Throws(NativeException::class) fun `rustffiSiws`(`authData`: SiwsFfiAuthResult): kotlin.String {
+            return FfiConverterString.lift(
+    uniffiRustCallWithError(NativeException) { _status ->
+    UniffiLib.INSTANCE.uniffi_explorer_native_fn_func_rustffi_siws(
+        FfiConverterTypeSiwsFfiAuthResult.lower(`authData`),_status)
+}
+    )
+    }
+    
 
 

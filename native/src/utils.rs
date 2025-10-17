@@ -26,6 +26,20 @@ impl Utils {
     pub fn i8_vec_to_vector_of_bytes(i8_vec: &[i8]) -> Vec<u8> {
         i8_vec.iter().map(|b| *b as u8).collect::<Vec<u8>>()
     }
+
+    pub fn shorten_base58(base58_string: &str) -> String {
+        let chars = base58_string.chars().collect::<Vec<char>>();
+
+        let mut shortened = String::default();
+        chars.iter().take(5).for_each(|char| shortened.push(*char));
+        shortened.push_str("...");
+
+        chars[chars.len() - 5..]
+            .iter()
+            .for_each(|char| shortened.push(*char));
+
+        shortened
+    }
 }
 
 #[derive(
