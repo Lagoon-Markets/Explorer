@@ -18,7 +18,6 @@ import com.solana.mobilewalletadapter.clientlib.ActivityResultSender
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import lagoon.markets.explorer.auth.CheckSiws
 import lagoon.markets.explorer.ui.theme.brushDarkVerticalGradient
 import lagoon.markets.rustffiInitDb
 
@@ -48,11 +47,11 @@ class AppStateViewModel(application: Application) : AndroidViewModel(application
 
 @Composable
 fun InitApp(
-    viewModel: AppStateViewModel = viewModel(),
+    appStateViewModel: AppStateViewModel = viewModel(),
     sender: ActivityResultSender,
     paddingValues: PaddingValues
 ) {
-    val initResult by viewModel.appState.collectAsState() // Result<Unit>?
+    val initResult by appStateViewModel.appState.collectAsState() // Result<Unit>?
 
     Column(
         modifier = Modifier
@@ -66,12 +65,12 @@ fun InitApp(
             }
 
             initResult?.isSuccess == true -> {
-                CheckSiws(sender, paddingValues)
+                AppNavigation(appStateViewModel, paddingValues)
             }
 
             else -> { // initResult != null && isFailure
                 val error = initResult?.exceptionOrNull()
-                Text("Initialization failed: ${error?.message}")
+                Text("Initialization failed: ${error.toString()}")
             }
         }
     }

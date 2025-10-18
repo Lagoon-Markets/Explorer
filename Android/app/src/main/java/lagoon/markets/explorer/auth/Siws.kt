@@ -25,13 +25,18 @@ import com.solana.mobilewalletadapter.common.signin.SignInWithSolana
 import kotlinx.coroutines.launch
 import lagoon.markets.SiwsFfiAuthResult
 import lagoon.markets.explorer.AppLinearLoader
+import lagoon.markets.explorer.AppStateViewModel
 import lagoon.markets.explorer.LoadingState
 import lagoon.markets.explorer.ProgressGradientButton
 import lagoon.markets.rustffiGetAuth
 import lagoon.markets.rustffiSiws
 
 @Composable
-fun CheckSiws(sender: ActivityResultSender, paddingValues: PaddingValues) {
+fun CheckSiws(
+    appStateViewModel: AppStateViewModel,
+    sender: ActivityResultSender,
+    paddingValues: PaddingValues
+) {
     val nativeAuth = remember { mutableStateOf<String?>(null) }
     val errorExists = remember { mutableStateOf<Exception?>(null) }
     var loadingState by remember { mutableStateOf(LoadingState.Initial) }

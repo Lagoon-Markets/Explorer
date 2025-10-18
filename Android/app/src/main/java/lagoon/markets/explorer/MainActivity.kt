@@ -33,7 +33,11 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier
                         .fillMaxSize()
                 ) { innerPadding ->
-                    InitApp(viewModel = appStateViewModel, sender, paddingValues = innerPadding)
+                    InitApp(
+                        appStateViewModel,
+                        sender,
+                        paddingValues = innerPadding
+                    )
                 }
             }
         }
