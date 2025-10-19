@@ -3,6 +3,7 @@ package lagoon.markets.explorer
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,8 +22,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -45,24 +48,58 @@ fun DiscoveryList() {
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
             .fillMaxSize()
-            .width(.8.dp)
     ) {
         Box(
-            contentAlignment = Alignment.Center,
             modifier = Modifier
-                .padding(10.dp)
+                .fillMaxWidth(.95f)
+                .padding(horizontal = 20.dp)
                 .background(color = Licorice, shape = RoundedCornerShape(50.dp))
-                .padding(10.dp)
         ) {
             val x402CurrentUri =
-                "x402:// https://lagoon.markets jjgjgjgjgjjgjgjgjgjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj"
-            val x402CurrentUriTrunked = x402CurrentUri.take(55) + "…"
-            TextPurpleMountainMajesty(
-                textContent = x402CurrentUriTrunked,
-                fontSize = 10.sp,
-                fontFamily = commitMonoFamily,
-                fontWeight = FontWeight.Bold,
-            )
+                "https://lagoon.markets"
+            val x402CurrentUriTrunked = if (x402CurrentUri.length > 55) {
+                x402CurrentUri.take(55) + "…"
+            } else {
+                x402CurrentUri
+            }
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Start,
+            ) {
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .background(
+                            color = HanPurple,
+                            shape = RoundedCornerShape(
+                                topStart = 50.dp,
+                                bottomStart = 50.dp,
+                                topEnd = 0.dp,
+                                bottomEnd = 0.dp
+                            )
+                        )
+                        .padding(top = 10.dp, bottom = 10.dp, start = 10.dp, end = 5.dp)
+                ) {
+                    AppText(
+                        textContent = "x402://discover",
+                        fontSize = 12.sp,
+                        fontFamily = commitMonoFamily
+                    )
+                }
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .padding(10.dp)
+                ) {
+                    AppText(
+                        textContent = x402CurrentUriTrunked,
+                        fontSize = 12.sp,
+                        fontFamily = commitMonoFamily,
+                        textAlign = TextAlign.Start,
+                        maxLines = 1
+                    )
+                }
+            }
         }
 
         Spacer(Modifier.height(50.dp))
@@ -74,31 +111,74 @@ fun DiscoveryList() {
                 .verticalScroll(rememberScrollState())
 
         ) {
-            DiscoveryItem()
+            val foo = "Get latest insights on onchain activity and developer productivity"
+            val fooBgImage = "https://lagoon.markets/typewriter.jpg"
+            val bar = "Convert newsletter to audio using an AI agent and download locally!"
+
+            DiscoveryItem(
+                backgroundImage = fooBgImage,
+                actionType = "Web",
+                actionTypeIcon = R.drawable.ic_launcher_background,
+                actionTypeIconDescription = "Web Action Icon",
+                actionTitle = "Latest Newsletter",
+                actionDescription = foo,
+                paymentCoinIcon = R.drawable.ic_launcher_background,
+                paymentCoinIconDescription = "USDC",
+                paymentCoinAmount = "1",
+                onClick = {}
+            )
             Spacer(Modifier.height(40.dp))
-            DiscoveryItem()
+            DiscoveryItem(
+                backgroundImage = fooBgImage,
+                actionType = "Agent",
+                actionTypeIcon = R.drawable.ic_launcher_background,
+                actionTypeIconDescription = "Agent Action Icon",
+                actionTitle = "Audio Newsletter",
+                actionDescription = bar,
+                paymentCoinIcon = R.drawable.ic_launcher_background,
+                paymentCoinIconDescription = "USDC",
+                paymentCoinAmount = "1.5",
+                onClick = {}
+            )
         }
     }
 }
 
 @Composable
-fun DiscoveryItem() {
+fun DiscoveryItem(
+    backgroundImage: String,
+    actionType: String,
+    actionTypeIcon: Int,
+    actionTypeIconDescription: String,
+    actionTitle: String,
+    actionDescription: String,
+    paymentCoinIcon: Int,
+    paymentCoinIconDescription: String,
+    paymentCoinAmount: String,
+    onClick: () -> Unit
+) {
+    val haptic = LocalHapticFeedback.current
+
     Box(
         modifier = Modifier
             .fillMaxWidth(0.9f)
-            .height(200.dp)
+            .height(250.dp)
             .clip(RoundedCornerShape(25.dp))
             .border(
                 width = 2.dp,
                 brush = brushDarkHorizontalGradient,
                 shape = RoundedCornerShape(25.dp)
             )
+            .clickable {
+                haptic.performHapticFeedback(HapticFeedbackType.Confirm)
+                // Handle click action here
+            }
     ) {
         // Background image or fallback
         Image(
             painter = rememberAsyncImagePainter(
                 ImageRequest.Builder(LocalContext.current)
-                    .data("https://lagoon.markets/typewriter.jpg").crossfade(true).build()
+                    .data(backgroundImage).crossfade(true).build()
             ),
             contentDescription = null,
             contentScale = ContentScale.Crop,
@@ -115,8 +195,8 @@ fun DiscoveryItem() {
                         colors = listOf(
                             HanPurple.copy(alpha = .2f),
                             HanPurple.copy(alpha = .1f),
-                            Licorice.copy(alpha = .6f),
                             Licorice.copy(alpha = .8f),
+                            Licorice.copy(alpha = 1f),
                         )
                     )
                 )
@@ -127,7 +207,6 @@ fun DiscoveryItem() {
             modifier = Modifier
                 .matchParentSize()
                 .padding(10.dp)
-
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -135,26 +214,58 @@ fun DiscoveryItem() {
                 modifier = Modifier.padding(5.dp),
             ) {
                 Image(
-                    painter = painterResource(R.drawable.splashscreen_icon),
-                    contentDescription = "Web content description",
-                    modifier = Modifier.width(40.dp)
+                    painter = painterResource(actionTypeIcon),
+                    contentDescription = actionTypeIconDescription,
+                    modifier = Modifier
+                        .width(20.dp)
                 )
+                Spacer(Modifier.width(5.dp))
                 TextWhite(
-                    textContent = "Web", fontFamily = smoochSansFamily, fontSize = 20.sp
+                    textContent = actionType, fontFamily = smoochSansFamily, fontSize = 25.sp
                 )
             }
             Column(
                 verticalArrangement = Arrangement.SpaceBetween,
                 modifier = Modifier.padding(10.dp),
             ) {
+                Row(
+                    horizontalArrangement = Arrangement.SpaceAround,
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Box(modifier = Modifier.weight(1f)) {
+                        AppText(
+                            textContent = actionTitle,
+                            fontFamily = smoochSansFamily,
+                            fontSize = 30.sp,
+                            color = PurpleMountainMajesty
+                        )
+                    }
+                    Box(modifier = Modifier.weight(.4f)) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Box {
+                                Image(
+                                    painter = painterResource(paymentCoinIcon),
+                                    contentDescription = paymentCoinIconDescription,
+                                    modifier = Modifier.width(25.dp)
+                                )
+                            }
+                            Spacer(Modifier.width(5.dp))
+                            Box {
+                                TextWhite(
+                                    textContent = paymentCoinAmount,
+                                    fontFamily = commitMonoFamily,
+                                    fontSize = 20.sp
+                                )
+                            }
+                        }
+                    }
+                }
                 AppText(
-                    textContent = "Latest Newsletter",
-                    fontFamily = smoochSansFamily,
-                    fontSize = 30.sp,
-                    color = PurpleMountainMajesty
-                )
-                AppText(
-                    textContent = "Get latest insights on onchain activity and developer productivity",
+                    textContent = actionDescription,
                     fontFamily = poppinsFamily,
                     fontSize = 12.sp,
                     textAlign = TextAlign.Start,
