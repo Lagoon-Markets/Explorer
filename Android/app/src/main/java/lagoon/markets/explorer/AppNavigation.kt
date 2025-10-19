@@ -14,6 +14,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import androidx.navigation.navDeepLink
+import androidx.navigation.toRoute
 import kotlinx.serialization.Serializable
 import lagoon.markets.explorer.ui.theme.commitMonoFamily
 
@@ -33,7 +34,42 @@ fun AppNavigation(
     }
 
     NavHost(navController = navController, startDestination = HomeRoute) {
-        composable<HomeRoute> { DiscoveryList() }
+        composable<HomeRoute> {
+            val x402CurrentUri = "https://lagoon.markets"
+            val fooBgImage = "https://lagoon.markets/typewriter.jpg"
+            val bar = "Convert newsletter to audio using an AI agent and download locally!"
+
+            val itemList = listOf(
+                DiscoveryItem(
+                    backgroundImage = "https://lagoon.markets/typewriter.jpg",
+                    actionType = "Http",
+                    actionTypeIcon = R.drawable.ic_launcher_background,
+                    actionTypeIconDescription = "Http Action Icon",
+                    actionTitle = "Latest Newsletter",
+                    actionDescription = "Get latest insights on onchain activity and developer productivity",
+                    paymentCoinIcon = R.drawable.ic_launcher_background,
+                    paymentCoinIconDescription = "USDC",
+                    paymentCoinAmount = "1.5",
+                    x402UriScheme = X402UriScheme.Https,
+                    x402Uri = "https://lagoon.markets/latest_newsletter"
+                ),
+                DiscoveryItem(
+                    backgroundImage = "https://lagoon.markets/typewriter.jpg",
+                    actionType = "Agent",
+                    actionTypeIcon = R.drawable.ic_launcher_background,
+                    actionTypeIconDescription = "Agent Action Icon",
+                    actionTitle = "Audio Newsletter",
+                    actionDescription = "Listen to newsletter as audio by converting it to audio using an AI agent",
+                    paymentCoinIcon = R.drawable.ic_launcher_background,
+                    paymentCoinIconDescription = "USDC",
+                    paymentCoinAmount = "1.5",
+                    x402UriScheme = X402UriScheme.Https,
+                    x402Uri = "https://lagoon.markets/latest_newsletter"
+                )
+            )
+
+            DiscoveryList(navController, itemList, x402CurrentUri)
+        }
         composable(
             route = "discover/{id}",
             deepLinks = listOf(
@@ -51,6 +87,13 @@ fun AppNavigation(
         ) { backStackEntry ->
             val id = backStackEntry.arguments?.getString("id")
             Text("GOT ROUTE: $id")
+        }
+        composable<DiscoveryItem> { backStackEntry ->
+            val item: DiscoveryItem = backStackEntry.toRoute()
+            DiscoveryItemView(
+                navController,
+                discoveryItem = item
+            )
         }
     }
 }
