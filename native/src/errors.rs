@@ -26,6 +26,16 @@ pub enum NativeError {
     SerializeSiwsAuthResultToBytes,
     #[error("Unable to deserialize `SiwsAuthResult` from bytes")]
     DeserializeSiwsAuthResultToBytes,
+    #[error("X402Uri error: `{0}`")]
+    X402Uri(String),
+    #[error("The scheme for x402://.../<scheme>:// is not supported")]
+    UnsupportedX402Scheme,
+    #[error("Invalid X402Uri. Error: `{0}`.")]
+    InvalidX402Uri(String),
+    #[error("Encountered HTTPS error: `{0}`")]
+    Https(String),
+    #[error("The x402 resource needs at least one payment method in `accepts` field")]
+    AtLeastOneAcceptsItemIsNeeded,
 }
 
 impl From<redb::Error> for NativeError {

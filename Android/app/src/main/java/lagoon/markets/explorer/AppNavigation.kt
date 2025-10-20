@@ -2,7 +2,6 @@ package lagoon.markets.explorer
 
 import android.content.Intent
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.text.font.FontWeight
@@ -17,6 +16,7 @@ import androidx.navigation.navDeepLink
 import androidx.navigation.toRoute
 import kotlinx.serialization.Serializable
 import lagoon.markets.explorer.ui.theme.commitMonoFamily
+import lagoon.markets.explorer.x402_handlers.HandleDiscoveryRoute
 
 @Serializable
 object HomeRoute
@@ -35,58 +35,26 @@ fun AppNavigation(
 
     NavHost(navController = navController, startDestination = HomeRoute) {
         composable<HomeRoute> {
-            val x402CurrentUri = "https://lagoon.markets"
-            val fooBgImage = "https://lagoon.markets/typewriter.jpg"
-            val bar = "Convert newsletter to audio using an AI agent and download locally!"
-
-            val itemList = listOf(
-                DiscoveryItem(
-                    backgroundImage = "https://lagoon.markets/typewriter.jpg",
-                    actionType = "Http",
-                    actionTypeIcon = R.drawable.ic_launcher_background,
-                    actionTypeIconDescription = "Http Action Icon",
-                    actionTitle = "Latest Newsletter",
-                    actionDescription = "Get latest insights on onchain activity and developer productivity",
-                    paymentCoinIcon = R.drawable.ic_launcher_background,
-                    paymentCoinIconDescription = "USDC",
-                    paymentCoinAmount = "1.5",
-                    x402UriScheme = X402UriScheme.Https,
-                    x402Uri = "https://lagoon.markets/latest_newsletter"
-                ),
-                DiscoveryItem(
-                    backgroundImage = "https://lagoon.markets/typewriter.jpg",
-                    actionType = "Agent",
-                    actionTypeIcon = R.drawable.ic_launcher_background,
-                    actionTypeIconDescription = "Agent Action Icon",
-                    actionTitle = "Audio Newsletter",
-                    actionDescription = "Listen to newsletter as audio by converting it to audio using an AI agent",
-                    paymentCoinIcon = R.drawable.ic_launcher_background,
-                    paymentCoinIconDescription = "USDC",
-                    paymentCoinAmount = "1.5",
-                    x402UriScheme = X402UriScheme.Https,
-                    x402Uri = "https://lagoon.markets/latest_newsletter"
-                )
-            )
-
-            DiscoveryList(navController, itemList, x402CurrentUri)
+            Home()
         }
+
         composable(
-            route = "discover/{id}",
+            route = "discover/{discovery_route}",
             deepLinks = listOf(
                 navDeepLink {
-                    uriPattern = "x402://discover/{id}"
+                    uriPattern = "x402://discover/{discovery_route}"
                     action = Intent.ACTION_VIEW
                 }
             ),
             arguments = listOf(
-                navArgument("id") {
+                navArgument("discovery_route") {
                     type = NavType.StringType
                     defaultValue = ""
                 }
             )
         ) { backStackEntry ->
-            val id = backStackEntry.arguments?.getString("id")
-            Text("GOT ROUTE: $id")
+            val discovery_route = backStackEntry.arguments?.getString("discovery_route")
+            HandleDiscoveryRoute(navController, discovery_route)
         }
         composable<DiscoveryItem> { backStackEntry ->
             val item: DiscoveryItem = backStackEntry.toRoute()
@@ -100,8 +68,7 @@ fun AppNavigation(
 
 @Composable
 fun Home() {
-    val foo =
-        "x402:// https://lagoon.markets"
+    val foo = "x402:// https://lagoon.markets"
 
     TextPurpleMountainMajesty(
         textContent = foo,

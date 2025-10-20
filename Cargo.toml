@@ -11,8 +11,9 @@ edition = "2021"
 publish = false
 
 [workspace.dependencies]
-rusty-x402 = { git = "https://github.com/JamiiDao/x402.git", rev = "cdef0c5" }
+rusty-x402 = { git = "https://github.com/JamiiDao/x402.git", rev = "424b21c" }
 common = { path = "./common" }
+x402-uri = { path = "./x402-uri" }
 
 jzon = "0.12.5"
 serde = { version = "1.0.228", features = ["derive"] }

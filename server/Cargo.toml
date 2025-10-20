@@ -7,7 +7,7 @@ edition.workspace = true
 publish.workspace = true
 
 [dependencies]
-rocket = { version = "0.5.1", features = ["tls"] }
+rocket = { version = "0.5.1", features = ["json", "tls"] }
 rusty-x402.workspace = true
 jzon.workspace = true
 wallet-standard-base.workspace = true

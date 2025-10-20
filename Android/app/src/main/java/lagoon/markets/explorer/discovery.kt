@@ -52,52 +52,7 @@ fun DiscoveryList(navController: NavController, list: List<DiscoveryItem>, x402C
     Column(
         horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxSize()
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth(.95f)
-                .padding(horizontal = 20.dp)
-                .background(color = Licorice, shape = RoundedCornerShape(50.dp))
-        ) {
-            val x402CurrentUriTrunked = if (x402CurrentUri.length > 55) {
-                x402CurrentUri.take(55) + "…"
-            } else {
-                x402CurrentUri
-            }
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Start,
-            ) {
-                Box(
-                    contentAlignment = Alignment.Center, modifier = Modifier
-                        .background(
-                            color = HanPurple, shape = RoundedCornerShape(
-                                topStart = 50.dp,
-                                bottomStart = 50.dp,
-                                topEnd = 0.dp,
-                                bottomEnd = 0.dp
-                            )
-                        )
-                        .padding(top = 10.dp, bottom = 10.dp, start = 10.dp, end = 5.dp)
-                ) {
-                    AppText(
-                        textContent = "x402://discover",
-                        fontSize = 12.sp,
-                        fontFamily = commitMonoFamily
-                    )
-                }
-                Box(
-                    contentAlignment = Alignment.Center, modifier = Modifier.padding(10.dp)
-                ) {
-                    AppText(
-                        textContent = x402CurrentUriTrunked,
-                        fontSize = 12.sp,
-                        fontFamily = commitMonoFamily,
-                        textAlign = TextAlign.Start,
-                        maxLines = 1
-                    )
-                }
-            }
-        }
+        X402RouteBar(x402CurrentUri)
 
         Spacer(Modifier.height(50.dp))
 
@@ -116,6 +71,56 @@ fun DiscoveryList(navController: NavController, list: List<DiscoveryItem>, x402C
                 Spacer(Modifier.height(40.dp))
             }
 
+        }
+    }
+}
+
+@Composable
+fun X402RouteBar(x402CurrentUri: String) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth(.95f)
+            .padding(horizontal = 20.dp)
+            .background(color = Licorice, shape = RoundedCornerShape(50.dp))
+    ) {
+        val x402CurrentUriTrunked = if (x402CurrentUri.length > 55) {
+            x402CurrentUri.take(55) + "…"
+        } else {
+            x402CurrentUri
+        }
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Start,
+        ) {
+            Box(
+                contentAlignment = Alignment.Center, modifier = Modifier
+                    .background(
+                        color = HanPurple, shape = RoundedCornerShape(
+                            topStart = 50.dp,
+                            bottomStart = 50.dp,
+                            topEnd = 0.dp,
+                            bottomEnd = 0.dp
+                        )
+                    )
+                    .padding(top = 10.dp, bottom = 10.dp, start = 10.dp, end = 5.dp)
+            ) {
+                AppText(
+                    textContent = "x402://discover",
+                    fontSize = 12.sp,
+                    fontFamily = commitMonoFamily
+                )
+            }
+            Box(
+                contentAlignment = Alignment.Center, modifier = Modifier.padding(10.dp)
+            ) {
+                AppText(
+                    textContent = x402CurrentUriTrunked,
+                    fontSize = 12.sp,
+                    fontFamily = commitMonoFamily,
+                    textAlign = TextAlign.Start,
+                    maxLines = 1
+                )
+            }
         }
     }
 }
