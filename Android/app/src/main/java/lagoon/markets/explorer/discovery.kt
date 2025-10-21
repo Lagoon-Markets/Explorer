@@ -29,15 +29,14 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
 import coil3.compose.rememberAsyncImagePainter
 import coil3.request.ImageRequest
 import coil3.request.crossfade
-import kotlinx.serialization.Serializable
+import lagoon.markets.DiscoveryFfi
+import lagoon.markets.X402UriSchemeFfi
 import lagoon.markets.explorer.ui.theme.HanPurple
 import lagoon.markets.explorer.ui.theme.Licorice
 import lagoon.markets.explorer.ui.theme.PurpleMountainMajesty
@@ -47,8 +46,9 @@ import lagoon.markets.explorer.ui.theme.commitMonoFamily
 import lagoon.markets.explorer.ui.theme.poppinsFamily
 import lagoon.markets.explorer.ui.theme.smoochSansFamily
 
+
 @Composable
-fun DiscoveryList(navController: NavController, list: List<DiscoveryItem>, x402CurrentUri: String) {
+fun DiscoveredList(navController: NavController, list: List<DiscoveryFfi>, x402CurrentUri: String) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxSize()
     ) {
@@ -65,8 +65,8 @@ fun DiscoveryList(navController: NavController, list: List<DiscoveryItem>, x402C
         ) {
 
             list.forEach { item ->
-                DiscoveryItemList(
-                    item, navController
+                DiscoveredItem(
+                    navController, item
                 )
                 Spacer(Modifier.height(40.dp))
             }
@@ -74,6 +74,146 @@ fun DiscoveryList(navController: NavController, list: List<DiscoveryItem>, x402C
         }
     }
 }
+
+
+@Composable
+fun DiscoveredItem(
+    navController: NavController,
+    discoveryItem: DiscoveryFfi,
+) {
+    val haptic = LocalHapticFeedback.current
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth(0.9f)
+            .height(250.dp)
+            .clip(RoundedCornerShape(25.dp))
+            .border(
+                width = 2.dp, brush = brushDarkHorizontalGradient, shape = RoundedCornerShape(25.dp)
+            )
+            .clickable {
+                haptic.performHapticFeedback(HapticFeedbackType.Confirm)
+                navController.navigate(
+                    discoveryFfiToDiscoveredItemRoute(discoveryItem)
+                )
+            }) {
+        // Background image or fallback
+        Image(
+            painter = rememberAsyncImagePainter(
+                ImageRequest.Builder(LocalContext.current).data(discoveryItem.headerImage)
+                    .crossfade(true).build()
+            ),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier
+                .matchParentSize()
+                .background(Licorice) // fallback if image fails to load
+        )
+
+        Box(
+            modifier = Modifier
+                .clip(RoundedCornerShape(8.dp))
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            HanPurple.copy(alpha = .2f),
+                            HanPurple.copy(alpha = .1f),
+                            Licorice.copy(alpha = .8f),
+                            Licorice.copy(alpha = 1f),
+                        )
+                    )
+                )
+        )
+
+        Column(
+            verticalArrangement = Arrangement.SpaceBetween,
+            modifier = Modifier
+                .clip(RoundedCornerShape(8.dp))
+                .padding(10.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center,
+                modifier = Modifier.padding(5.dp),
+            ) {
+                Image(
+                    painter = painterResource(getSchemeIcon(discoveryItem.uriScheme)),
+                    contentDescription = getSchemeIconDescription(discoveryItem.uriScheme),
+                    modifier = Modifier.width(20.dp)
+                )
+                Spacer(Modifier.width(5.dp))
+                TextWhite(
+                    textContent = getX402UriSchemeText(discoveryItem.uriScheme),
+                    fontFamily = smoochSansFamily,
+                    fontSize = 25.sp
+                )
+            }
+            Column(
+                verticalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.padding(10.dp),
+            ) {
+                Row(
+                    horizontalArrangement = Arrangement.SpaceAround,
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Box(modifier = Modifier.weight(1f)) {
+                        AppText(
+                            textContent = discoveryItem.title ?: "",
+                            fontFamily = smoochSansFamily,
+                            fontSize = 30.sp,
+                            color = PurpleMountainMajesty
+                        )
+                    }
+                    Box(modifier = Modifier.weight(.4f)) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            discoveryItem.assetInfo?.let {
+                                Box {
+                                    Image(
+                                        painter = rememberAsyncImagePainter(
+                                            ImageRequest.Builder(LocalContext.current)
+                                                .data(it.logoUri)
+                                                .crossfade(true).build()
+                                        ),
+                                        contentDescription = null,
+                                        contentScale = ContentScale.Crop,
+                                        modifier = Modifier
+                                            .width(20.dp)
+                                            .clip(RoundedCornerShape(8.dp))
+                                            .background(Licorice) // fallback if image fails to load
+                                    )
+                                }
+
+                                Spacer(Modifier.width(5.dp))
+                                Box {
+                                    TextWhite(
+                                        textContent = it.symbol,
+                                        fontFamily = commitMonoFamily,
+                                        fontSize = 10.sp
+                                    )
+                                }
+                            }
+
+
+                        }
+                    }
+                }
+                AppText(
+                    textContent = discoveryItem.description ?: "",
+                    fontFamily = poppinsFamily,
+                    fontSize = 12.sp,
+                    textAlign = TextAlign.Start,
+                    lineHeight = 15.sp,
+                    fontWeight = FontWeight.Thin
+                )
+            }
+        }
+    }
+}
+
 
 @Composable
 fun X402RouteBar(x402CurrentUri: String) {
@@ -126,130 +266,8 @@ fun X402RouteBar(x402CurrentUri: String) {
 }
 
 @Composable
-fun DiscoveryItemList(
-    discoveryItem: DiscoveryItem, navController: NavController
-) {
-    val haptic = LocalHapticFeedback.current
-
-    Box(
-        modifier = Modifier
-            .fillMaxWidth(0.9f)
-            .height(250.dp)
-            .clip(RoundedCornerShape(25.dp))
-            .border(
-                width = 2.dp, brush = brushDarkHorizontalGradient, shape = RoundedCornerShape(25.dp)
-            )
-            .clickable {
-                haptic.performHapticFeedback(HapticFeedbackType.Confirm)
-                navController.navigate(discoveryItem)
-            }) {
-        // Background image or fallback
-        Image(
-            painter = rememberAsyncImagePainter(
-                ImageRequest.Builder(LocalContext.current).data(discoveryItem.backgroundImage)
-                    .crossfade(true).build()
-            ),
-            contentDescription = null,
-            contentScale = ContentScale.Crop,
-            modifier = Modifier
-                .matchParentSize()
-                .background(Licorice) // fallback if image fails to load
-        )
-
-        Box(
-            modifier = Modifier
-                .matchParentSize()
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(
-                            HanPurple.copy(alpha = .2f),
-                            HanPurple.copy(alpha = .1f),
-                            Licorice.copy(alpha = .8f),
-                            Licorice.copy(alpha = 1f),
-                        )
-                    )
-                )
-        )
-
-        Column(
-            verticalArrangement = Arrangement.SpaceBetween,
-            modifier = Modifier
-                .matchParentSize()
-                .padding(10.dp)
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center,
-                modifier = Modifier.padding(5.dp),
-            ) {
-                Image(
-                    painter = painterResource(discoveryItem.actionTypeIcon),
-                    contentDescription = discoveryItem.actionTypeIconDescription,
-                    modifier = Modifier.width(20.dp)
-                )
-                Spacer(Modifier.width(5.dp))
-                TextWhite(
-                    textContent = discoveryItem.actionType,
-                    fontFamily = smoochSansFamily,
-                    fontSize = 25.sp
-                )
-            }
-            Column(
-                verticalArrangement = Arrangement.SpaceBetween,
-                modifier = Modifier.padding(10.dp),
-            ) {
-                Row(
-                    horizontalArrangement = Arrangement.SpaceAround,
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Box(modifier = Modifier.weight(1f)) {
-                        AppText(
-                            textContent = discoveryItem.actionTitle,
-                            fontFamily = smoochSansFamily,
-                            fontSize = 30.sp,
-                            color = PurpleMountainMajesty
-                        )
-                    }
-                    Box(modifier = Modifier.weight(.4f)) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Center
-                        ) {
-                            Box {
-                                Image(
-                                    painter = painterResource(discoveryItem.paymentCoinIcon),
-                                    contentDescription = discoveryItem.paymentCoinIconDescription,
-                                    modifier = Modifier.width(25.dp)
-                                )
-                            }
-                            Spacer(Modifier.width(5.dp))
-                            Box {
-                                TextWhite(
-                                    textContent = discoveryItem.paymentCoinAmount,
-                                    fontFamily = commitMonoFamily,
-                                    fontSize = 20.sp
-                                )
-                            }
-                        }
-                    }
-                }
-                AppText(
-                    textContent = discoveryItem.actionDescription,
-                    fontFamily = poppinsFamily,
-                    fontSize = 12.sp,
-                    textAlign = TextAlign.Start,
-                    lineHeight = 15.sp,
-                    fontWeight = FontWeight.Thin
-                )
-            }
-        }
-    }
-}
-
-@Composable
 fun DiscoveryItemView(
-    navController: NavController, discoveryItem: DiscoveryItem
+    navController: NavController, discoveryItem: DiscoveredItemRoute
 ) {
     Column(
         verticalArrangement = Arrangement.SpaceBetween,
@@ -278,13 +296,13 @@ fun DiscoveryItemView(
                 Image(
                     painter = rememberAsyncImagePainter(
                         ImageRequest.Builder(LocalContext.current)
-                            .data(discoveryItem.backgroundImage).crossfade(true).build()
+                            .data(discoveryItem.headerImage).crossfade(true).build()
                     ),
                     contentDescription = null,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier
                         .height(200.dp)
-                        .clip(RoundedCornerShape(20.dp))  // this enforces rounded corners
+//                        .matchParentSize()
                         .background(
                             Licorice,
                         ) // fallback if image fails to load
@@ -302,13 +320,13 @@ fun DiscoveryItemView(
                     modifier = Modifier.weight(1f)
                 ) {
                     Image(
-                        painter = painterResource(discoveryItem.actionTypeIcon),
-                        contentDescription = discoveryItem.actionTypeIconDescription,
+                        painter = painterResource(getSchemeIcon(discoveryItem.uriScheme)),
+                        contentDescription = getSchemeIconDescription(discoveryItem.uriScheme),
                         modifier = Modifier.width(20.dp)
                     )
                     Spacer(modifier = Modifier.width(10.dp))
                     TextPurpleMountainMajesty(
-                        textContent = discoveryItem.actionType,
+                        textContent = getX402UriSchemeText(discoveryItem.uriScheme),
                         fontFamily = smoochSansFamily,
                         fontSize = 25.sp
                     )
@@ -321,7 +339,7 @@ fun DiscoveryItemView(
                         .padding(horizontal = 15.dp, vertical = 5.dp)
                         .weight(1f)
                 ) {
-                    val uriSchemeText = getX402UriSchemeText(discoveryItem.x402UriScheme)
+                    val uriSchemeText = getX402UriSchemeText(discoveryItem.uriScheme)
                     TextWhite(textContent = uriSchemeText, fontSize = 20.sp)
                 }
             }
@@ -330,7 +348,7 @@ fun DiscoveryItemView(
 
             Box(modifier = Modifier.fillMaxWidth()) {
                 AppText(
-                    textContent = discoveryItem.actionTitle,
+                    textContent = discoveryItem.title ?: "",
                     fontFamily = smoochSansFamily,
                     fontSize = 40.sp,
                     textAlign = TextAlign.Start,
@@ -342,7 +360,7 @@ fun DiscoveryItemView(
 
             Box(modifier = Modifier.fillMaxWidth()) {
                 AppText(
-                    textContent = discoveryItem.actionDescription,
+                    textContent = discoveryItem.description ?: "",
                     fontFamily = poppinsFamily,
                     fontSize = 18.sp,
                     textAlign = TextAlign.Start,
@@ -364,18 +382,28 @@ fun DiscoveryItemView(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center,
             ) {
-                Image(
-                    painter = painterResource(discoveryItem.paymentCoinIcon),
-                    contentDescription = discoveryItem.paymentCoinIconDescription,
-                    modifier = Modifier.width(30.dp)
-                )
+                Box {
+                    Image(
+                        painter = rememberAsyncImagePainter(
+                            ImageRequest.Builder(LocalContext.current)
+                                .data(discoveryItem.logoUri)
+                                .crossfade(true).build()
+                        ),
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .width(20.dp)
+                            .background(Licorice) // fallback if image fails to load
+                    )
+                }
+
                 Spacer(Modifier.width(5.dp))
                 val amount =
-                    "${discoveryItem.paymentCoinAmount} ${discoveryItem.paymentCoinIconDescription}"
+                    "${discoveryItem.amount} ${discoveryItem.symbol ?: ""}"
                 AppText(
                     textContent = amount,
                     fontFamily = commitMonoFamily,
-                    fontSize = 25.sp
+                    fontSize = 15.sp
                 )
 
             }
@@ -420,56 +448,13 @@ fun DiscoveryItemView(
 }
 
 
-@Preview
-@Composable
-fun DiscoveryItemPreview() {
-    val navController = rememberNavController()
-
-    DiscoveryItemView(
-        navController, DiscoveryItem(
-            backgroundImage = "https://lagoon.markets/typewriter.jpg",
-            actionType = "Agent",
-            actionTypeIcon = R.drawable.ic_launcher_background,
-            actionTypeIconDescription = "Agent Action Icon",
-            actionTitle = "Audio Newsletter",
-            actionDescription = "Listen to newsletter as audio by converting it to audio using an AI agent",
-            paymentCoinIcon = R.drawable.ic_launcher_background,
-            paymentCoinIconDescription = "USDC",
-            paymentCoinAmount = "1.5",
-            x402UriScheme = X402UriScheme.A2a,
-            x402Uri = "a2a:lagoon.markets/a2a/convert/latest_newsletter"
-        )
-    )
-}
-
-@Serializable
-data class DiscoveryItem(
-    val backgroundImage: String,
-    val actionType: String,
-    val actionTypeIcon: Int,
-    val actionTypeIconDescription: String,
-    val actionTitle: String,
-    val actionDescription: String,
-    val paymentCoinIcon: Int,
-    val paymentCoinIconDescription: String,
-    val paymentCoinAmount: String,
-    val x402UriScheme: X402UriScheme,
-    val x402Uri: String
-)
-
-enum class X402UriScheme {
-    Https,
-    A2a,
-    Mcp
-}
-
-fun getX402UriSchemeText(scheme: X402UriScheme): String {
+fun getX402UriSchemeText(scheme: X402UriSchemeFfi): String {
     return when (scheme) {
-        X402UriScheme.A2a -> {
+        X402UriSchemeFfi.A2A -> {
             "x402://a2a"
         }
 
-        X402UriScheme.Mcp -> {
+        X402UriSchemeFfi.MCP -> {
             "x402://mcp"
         }
 
@@ -477,4 +462,38 @@ fun getX402UriSchemeText(scheme: X402UriScheme): String {
             "x402://https"
         }
     }
+}
+
+fun getSchemeIcon(scheme: X402UriSchemeFfi): Int {
+    return when (scheme) {
+        X402UriSchemeFfi.A2A -> R.drawable.a2a
+        X402UriSchemeFfi.MCP -> R.drawable.mcp
+        X402UriSchemeFfi.HTTPS -> R.drawable.web
+    }
+}
+
+fun getSchemeIconDescription(scheme: X402UriSchemeFfi): String {
+    return when (scheme) {
+        X402UriSchemeFfi.A2A -> "A2A icon"
+        X402UriSchemeFfi.MCP -> "MCP icon"
+        X402UriSchemeFfi.HTTPS -> "HTTPS icon"
+    }
+}
+
+fun discoveryFfiToDiscoveredItemRoute(value: DiscoveryFfi): DiscoveredItemRoute {
+    return DiscoveredItemRoute(
+        uriScheme = value.uriScheme,
+        uri = value.uri,
+        title = value.title,
+        description = value.description,
+        headerImage = value.headerImage,
+        amount = value.amount,
+        asset = value.asset,
+        payTo = value.payTo,
+        feePayer = value.feePayer,
+        address = value.assetInfo?.address,
+        symbol = value.assetInfo?.symbol,
+        name = value.assetInfo?.name,
+        logoUri = value.assetInfo?.logoUri
+    )
 }

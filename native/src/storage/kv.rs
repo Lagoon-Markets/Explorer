@@ -2,6 +2,7 @@ use std::borrow::Borrow;
 
 use camino::Utf8PathBuf;
 use redb::{Database, Error as RedbError, Key, ReadableDatabase, TableDefinition, Value};
+use serde::Deserialize;
 
 use crate::{NativeError, NativeResult, SiwsAuthResult, APP_STORAGE};
 
@@ -64,6 +65,28 @@ impl AppStorage {
 
         Ok(table.get(key)?)
     }
+
+    fn table_data_exists<'a, K: Key, V: Value>(
+        &self,
+        table: TableDefinition<'_, K, V>,
+    ) -> Result<TableStatus, RedbError> {
+        if let Some(error) = self.store.begin_read()?.open_table(table).err() {
+            Ok(match error {
+                redb::TableError::TableDoesNotExist(_) => TableStatus::NotFound,
+                redb::TableError::TableExists(_) => TableStatus::Exists,
+                _ => return Err(error.into()),
+            })
+        } else {
+            Ok(TableStatus::Ok)
+        }
+    }
+}
+
+#[derive(Debug, PartialEq, Eq)]
+enum TableStatus {
+    Ok,
+    Exists,
+    NotFound,
 }
 
 impl AppStorage {
@@ -100,4 +123,59 @@ impl AppStorage {
             })
             .transpose()
     }
+}
+
+impl AppStorage {
+    const TOKEN_LIST_TABLE: AuthSchema = AuthSchema::new("token_list_table");
+
+    pub async fn load_token_list(&self) -> NativeResult<()> {
+        if self.table_data_exists(Self::TOKEN_LIST_TABLE)? == TableStatus::NotFound {
+            let token_list = include_str!(concat!(
+                std::env!("CARGO_WORKSPACE_DIR"),
+                "solana.tokenlist.json"
+            ));
+
+            let parsed_list = serde_json::from_str::<SolanaTokenListMetadata>(token_list)
+                .or(Err(NativeError::UnableToDeserializeTokenList))?;
+
+            parsed_list.tokens.iter().try_for_each(|token| {
+                let value_bytes = wincode::serialize(&token).or(Err(
+                    NativeError::UnableToSerializeTokenValue(format!("{:?}", token)),
+                ))?;
+                self.set(Self::TOKEN_LIST_TABLE, token.address.as_str(), value_bytes)?;
+
+                Ok::<_, NativeError>(())
+            })
+        } else {
+            Ok(())
+        }
+    }
+
+    pub fn get_token(&self, key: &str) -> NativeResult<Option<TokenInfo>> {
+        self.get(Self::TOKEN_LIST_TABLE, key)?
+            .map(|value| {
+                let bytes = value.value();
+                let deser = wincode::deserialize::<TokenInfo>(&bytes)
+                    .or(Err(NativeError::CorruptedTokenInfoEntry(key.to_string())))?;
+
+                Ok::<_, NativeError>(deser)
+            })
+            .transpose()
+    }
+}
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct SolanaTokenListMetadata {
+    pub tokens: Vec<TokenInfo>,
+}
+
+#[derive(Debug, Clone, Deserialize, wincode::SchemaRead, wincode::SchemaWrite, uniffi::Record)]
+#[allow(non_snake_case)]
+pub struct TokenInfo {
+    pub chainId: u8,
+    pub address: String,
+    pub symbol: String,
+    pub name: String,
+    pub decimals: u8,
+    pub logoURI: String,
 }

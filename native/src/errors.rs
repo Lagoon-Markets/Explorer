@@ -36,6 +36,12 @@ pub enum NativeError {
     Https(String),
     #[error("The x402 resource needs at least one payment method in `accepts` field")]
     AtLeastOneAcceptsItemIsNeeded,
+    #[error("Unable to deserialize `solana.tokenlist.json` ")]
+    UnableToDeserializeTokenList,
+    #[error("Unable to serialize `{0}` Token value from `solana.tokenlist.json`")]
+    UnableToSerializeTokenValue(String),
+    #[error("The entry `{0}` from the token list table is corrupted. Unable to deserialize into TokenInfo")]
+    CorruptedTokenInfoEntry(String),
 }
 
 impl From<redb::Error> for NativeError {

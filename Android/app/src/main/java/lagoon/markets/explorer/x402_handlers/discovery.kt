@@ -22,9 +22,9 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import lagoon.markets.DiscoveryFfi
 import lagoon.markets.explorer.AppLinearLoader
+import lagoon.markets.explorer.DiscoveredList
 import lagoon.markets.explorer.GradientButton
 import lagoon.markets.explorer.LagoonMarketsLogo
-import lagoon.markets.explorer.TextPurpleMountainMajesty
 import lagoon.markets.explorer.TextWhite
 import lagoon.markets.explorer.X402RouteBar
 import lagoon.markets.explorer.appLog
@@ -56,18 +56,20 @@ fun PerformDiscovery(navController: NavController, x402Path: String) {
 
     }
 
-    if (outcome.value == null) {
-        Column(
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.fillMaxSize()
-        ) {
-            X402RouteBar(x402Path)
-            Spacer(Modifier.height(20.dp))
-            AppLinearLoader()
-        }
-    } else {
-        TextPurpleMountainMajesty(textContent = outcome.value.toString())
+    outcome.value?.let {
+        DiscoveredList(
+            navController,
+            list = it,
+            x402CurrentUri = x402Path
+        )
+    } ?: Column(
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.fillMaxSize()
+    ) {
+        X402RouteBar(x402Path)
+        Spacer(Modifier.height(20.dp))
+        AppLinearLoader()
     }
 }
 

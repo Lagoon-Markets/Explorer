@@ -15,11 +15,29 @@ import androidx.navigation.navArgument
 import androidx.navigation.navDeepLink
 import androidx.navigation.toRoute
 import kotlinx.serialization.Serializable
+import lagoon.markets.X402UriSchemeFfi
 import lagoon.markets.explorer.ui.theme.commitMonoFamily
 import lagoon.markets.explorer.x402_handlers.HandleDiscoveryRoute
 
 @Serializable
 object HomeRoute
+
+@Serializable
+data class DiscoveredItemRoute(
+    var uriScheme: X402UriSchemeFfi,
+    var uri: kotlin.String,
+    var title: kotlin.String?,
+    var description: kotlin.String?,
+    var headerImage: kotlin.String?,
+    var amount: kotlin.String,
+    var asset: kotlin.String,
+    var payTo: kotlin.String,
+    var feePayer: kotlin.String,
+    var address: kotlin.String?,
+    var symbol: kotlin.String?,
+    var name: kotlin.String?,
+    var logoUri: kotlin.String?
+)
 
 @Composable
 fun AppNavigation(
@@ -56,12 +74,9 @@ fun AppNavigation(
             val discovery_route = backStackEntry.arguments?.getString("discovery_route")
             HandleDiscoveryRoute(navController, discovery_route)
         }
-        composable<DiscoveryItem> { backStackEntry ->
-            val item: DiscoveryItem = backStackEntry.toRoute()
-            DiscoveryItemView(
-                navController,
-                discoveryItem = item
-            )
+        composable<DiscoveredItemRoute> { backStackEntry ->
+            val item: DiscoveredItemRoute = backStackEntry.toRoute()
+            DiscoveryItemView(navController, item)
         }
     }
 }

@@ -2,7 +2,7 @@ use blocking::unblock;
 use rusty_x402::DiscoveryPayload;
 use x402_uri::{X402UriAction, X402UriError, X402UriScheme};
 
-use crate::{NativeError, NativeResult};
+use crate::{AppStorage, NativeError, NativeResult, TokenInfo};
 
 #[uniffi::export]
 pub async fn rustffi_discover_resources(
@@ -23,6 +23,7 @@ pub struct DiscoveryFfi {
     pub pay_to: String,
     pub maxtimeout_seconds: String,
     pub fee_payer: String,
+    pub asset_info: Option<TokenInfo>,
 }
 
 impl DiscoveryFfi {
@@ -61,6 +62,8 @@ impl DiscoveryFfi {
                 .first()
                 .ok_or(NativeError::AtLeastOneAcceptsItemIsNeeded)?;
 
+            let asset_info = AppStorage::get_store()?.get_token(accepts.asset())?;
+
             let info = Self {
                 uri_scheme: x402_uri_scheme.into(),
                 uri: x402_resource_uri.to_string(),
@@ -72,6 +75,7 @@ impl DiscoveryFfi {
                 pay_to: accepts.pay_to().to_string(),
                 maxtimeout_seconds: accepts.max_timeout_seconds().to_string(),
                 fee_payer: accepts.extra().fee_payer().to_string(),
+                asset_info,
             };
 
             output.push(info);
