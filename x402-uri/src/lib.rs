@@ -122,9 +122,9 @@ impl TryFrom<&str> for X402UriScheme {
 
     fn try_from(value: &str) -> Result<Self, Self::Error> {
         let parsed = match value {
-            Self::HTTPS_SCHEME => Self::Https,
-            Self::A2A_SCHEME => Self::A2a,
-            Self::MCP_SCHEME => Self::Mcp,
+            _m if value.starts_with(Self::HTTPS_SCHEME) => Self::Https,
+            _m if value.starts_with(Self::A2A_SCHEME) => Self::A2a,
+            _m if value.starts_with(Self::MCP_SCHEME) => Self::Mcp,
             _ => return Err(X402UriError::InvalidX402UriScheme),
         };
 

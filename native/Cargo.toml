@@ -25,6 +25,10 @@ bs58.workspace = true
 serde = { workspace = true, features = ["derive"] }
 wincode = { version = "0.1.2", features = ["derive"] }
 async-io = "2.6.0"
+x402-uri.workspace = true
+minreq = { version = "2.14.1", features = ["https"] }
+serde_json.workspace = true
+rusty-x402.workspace = true
 
 [build-dependencies]
 uniffi = { version = "0.29.4", features = ["build"] }

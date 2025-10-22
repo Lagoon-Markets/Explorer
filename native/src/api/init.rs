@@ -11,9 +11,8 @@ pub async fn rustffi_init_db(app_dir_path: &str) -> Result<(), NativeError> {
         .await
         .map_err(|error| NativeError::InitKv(error.to_string()))?;
 
-    APP_STORAGE
-        .set(store)
-        .or(Err(NativeError::UnableToSetGlobalStorageObject))?;
+    APP_STORAGE.set(store).err();
+    // .or(Err(NativeError::UnableToSetGlobalStorageObject))?;
 
-    Ok(())
+    AppStorage::get_store()?.load_token_list().await
 }
