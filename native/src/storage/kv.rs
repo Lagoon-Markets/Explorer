@@ -114,14 +114,18 @@ impl AppStorage {
     }
 
     pub fn get_auth(&self) -> NativeResult<Option<SiwsAuthResult>> {
-        let auth_bytes = self.get(Self::AUTH_TABLE, Self::AUTH_KEY)?;
-
-        auth_bytes
-            .map(|auth_bytes_inner| {
-                wincode::deserialize(&auth_bytes_inner.value())
-                    .or(Err(NativeError::DeserializeSiwsAuthResultToBytes))
-            })
-            .transpose()
+        match self.get(Self::AUTH_TABLE, Self::AUTH_KEY) {
+            Err(error) => match error {
+                redb::Error::TableDoesNotExist(_) => Ok(Option::None),
+                _ => Err(error.into()),
+            },
+            Ok(auth_bytes) => auth_bytes
+                .map(|auth_bytes_inner| {
+                    wincode::deserialize(&auth_bytes_inner.value())
+                        .or(Err(NativeError::DeserializeSiwsAuthResultToBytes))
+                })
+                .transpose(),
+        }
     }
 }
 

@@ -1,5 +1,6 @@
 package lagoon.markets.explorer
 
+import android.app.Activity
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -7,18 +8,28 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Scaffold
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.solana.mobilewalletadapter.clientlib.ActivityResultSender
 import lagoon.markets.explorer.ui.theme.LagoonMarketsTheme
+
+val LocalActivityResultSender = staticCompositionLocalOf<ActivityResultSender> {
+    error("No ActivityResultSender provided")
+}
+
 
 class MainActivity : ComponentActivity() {
     init {
         System.loadLibrary("explorer_native")
     }
 
-    val sender = ActivityResultSender(this)
-
+    val rootActivity = this
+    val sender = ActivityResultSender(rootActivity)
+    val localActivity = staticCompositionLocalOf<Activity> {
+        error("No Activity provided")
+    }
     private val appStateViewModel: AppStateViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -28,16 +39,21 @@ class MainActivity : ComponentActivity() {
         installSplashScreen()
 
         setContent {
-            LagoonMarketsTheme {
-                Scaffold(
-                    modifier = Modifier
-                        .fillMaxSize()
-                ) { innerPadding ->
-                    InitApp(
-                        appStateViewModel,
-                        sender,
-                        paddingValues = innerPadding
-                    )
+            CompositionLocalProvider(
+                LocalActivityResultSender provides sender,
+                localActivity provides this
+            ) {
+                LagoonMarketsTheme {
+                    Scaffold(
+                        modifier = Modifier
+                            .fillMaxSize()
+                    ) { innerPadding ->
+                        InitApp(
+                            appStateViewModel,
+                            sender,
+                            paddingValues = innerPadding
+                        )
+                    }
                 }
             }
         }

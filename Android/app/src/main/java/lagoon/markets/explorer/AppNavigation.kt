@@ -1,7 +1,6 @@
 package lagoon.markets.explorer
 
 import android.content.Intent
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.text.font.FontWeight
@@ -16,11 +15,21 @@ import androidx.navigation.navDeepLink
 import androidx.navigation.toRoute
 import kotlinx.serialization.Serializable
 import lagoon.markets.X402UriSchemeFfi
+import lagoon.markets.explorer.auth.SiwsSignup
 import lagoon.markets.explorer.ui.theme.commitMonoFamily
 import lagoon.markets.explorer.x402_handlers.HandleDiscoveryRoute
 
 @Serializable
-object HomeRoute
+object CheckProfileInitializedRoute
+
+@Serializable
+object DashboardRoute
+
+@Serializable
+object OnboardingRoute
+
+@Serializable
+object SignUpRoute
 
 @Serializable
 data class DiscoveredItemRoute(
@@ -42,7 +51,6 @@ data class DiscoveredItemRoute(
 @Composable
 fun AppNavigation(
     appStateViewModel: AppStateViewModel,
-    paddingValues: PaddingValues,
 ) {
     val navController = rememberNavController()
 
@@ -51,9 +59,20 @@ fun AppNavigation(
         appLog("Navigated to route: $route")
     }
 
-    NavHost(navController = navController, startDestination = HomeRoute) {
-        composable<HomeRoute> {
-            Home()
+    NavHost(navController = navController, startDestination = CheckProfileInitializedRoute) {
+        composable<CheckProfileInitializedRoute> {
+            CheckProfileInitialized(navController)
+        }
+        composable<OnboardingRoute> {
+            OnboardingView(navController)
+        }
+        composable<SignUpRoute> {
+            SiwsSignup(navController)
+        }
+
+        composable<DashboardRoute> {
+
+            Dashboard()
         }
 
         composable(
@@ -82,11 +101,10 @@ fun AppNavigation(
 }
 
 @Composable
-fun Home() {
-    val foo = "x402:// https://lagoon.markets"
+fun Dashboard() {
 
     TextPurpleMountainMajesty(
-        textContent = foo,
+        textContent = "DASHBOARD",
         fontWeight = FontWeight.Bold,
         fontFamily = commitMonoFamily, fontSize = 15.sp
     )
