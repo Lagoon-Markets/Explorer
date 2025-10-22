@@ -1,85 +1,96 @@
 package lagoon.markets.explorer.auth
 
+import android.app.Activity
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
-import com.solana.mobilewalletadapter.clientlib.ActivityResultSender
+import androidx.navigation.NavController
 import com.solana.mobilewalletadapter.clientlib.ConnectionIdentity
 import com.solana.mobilewalletadapter.clientlib.MobileWalletAdapter
 import com.solana.mobilewalletadapter.clientlib.TransactionResult
 import com.solana.mobilewalletadapter.clientlib.protocol.MobileWalletAdapterClient
 import com.solana.mobilewalletadapter.common.signin.SignInWithSolana
 import kotlinx.coroutines.launch
+import lagoon.markets.AppDetailsFfi
 import lagoon.markets.SiwsFfiAuthResult
-import lagoon.markets.explorer.AppLinearLoader
-import lagoon.markets.explorer.AppStateViewModel
-import lagoon.markets.explorer.LoadingState
+import lagoon.markets.explorer.DashboardRoute
+import lagoon.markets.explorer.LagoonMarketsLogo
+import lagoon.markets.explorer.LocalActivityResultSender
 import lagoon.markets.explorer.ProgressGradientButton
-import lagoon.markets.rustffiGetAuth
+import lagoon.markets.explorer.R
+import lagoon.markets.explorer.ShowErrorAsBottomSheet
+import lagoon.markets.explorer.TextPurpleMountainMajesty
 import lagoon.markets.rustffiSiws
 
+//@Composable
+//fun CheckSiws(
+//    appStateViewModel: AppStateViewModel,
+//    sender: ActivityResultSender,
+//    paddingValues: PaddingValues
+//) {
+//    val nativeAuth = remember { mutableStateOf<String?>(null) }
+//    val errorExists = remember { mutableStateOf<Exception?>(null) }
+//    var loadingState by remember { mutableStateOf(LoadingState.Initial) }
+//
+//    LaunchedEffect(Unit) {
+//        try {
+//            nativeAuth.value = rustffiGetAuth()
+//        } catch (error: Exception) {
+//            errorExists.value = error
+//        }
+//
+//        loadingState = LoadingState.Loaded
+//    }
+//
+//    Column(
+//        verticalArrangement = Arrangement.Center,
+//        horizontalAlignment = Alignment.CenterHorizontally,
+//        modifier = Modifier
+//            .fillMaxSize()
+//            .padding(paddingValues)
+//    ) {
+//        when (loadingState) {
+//            LoadingState.Initial -> {
+//                AppLinearLoader()
+//            }
+//
+//            LoadingState.Loaded -> {
+//                nativeAuth.value?.let {
+//                    Text(it)
+//                } ?: SiwsScreen(sender)
+//            }
+//        }
+//    }
+//}
+
+
 @Composable
-fun CheckSiws(
-    appStateViewModel: AppStateViewModel,
-    sender: ActivityResultSender,
-    paddingValues: PaddingValues
+fun SiwsSignup(
+    navController: NavController
 ) {
-    val nativeAuth = remember { mutableStateOf<String?>(null) }
-    val errorExists = remember { mutableStateOf<Exception?>(null) }
-    var loadingState by remember { mutableStateOf(LoadingState.Initial) }
+    val appDetails = AppDetailsFfi()
 
-    LaunchedEffect(Unit) {
-        try {
-            nativeAuth.value = rustffiGetAuth()
-        } catch (error: Exception) {
-            errorExists.value = error
-        }
-
-        loadingState = LoadingState.Loaded
-    }
-
-    Column(
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(paddingValues)
-    ) {
-        when (loadingState) {
-            LoadingState.Initial -> {
-                AppLinearLoader()
-            }
-
-            LoadingState.Loaded -> {
-                nativeAuth.value?.let {
-                    Text(it)
-                } ?: SiwsScreen(sender)
-            }
-        }
-    }
-}
-
-@Composable
-fun SiwsScreen(sender: ActivityResultSender) {
     // `this` is the current Android activity
-    val domain = "https://jamiidao.app"
-    // Define dApp's identity metadata
-    val solanaUri = domain.toUri()
-    val iconUri = "favicon.png".toUri() // resolves to https://yourdapp.com/favicon.ico
-    val identityName = "The Trenches Newsletter"
+    val sender = LocalActivityResultSender.current
+    val solanaUri = appDetails.domain().toUri()
+    val iconUri = appDetails.favicon().toUri()
+    val identityName = appDetails.identity()
 
     // Construct the client
     val walletAdapter = MobileWalletAdapter(
@@ -90,7 +101,7 @@ fun SiwsScreen(sender: ActivityResultSender) {
         )
     )
 
-    val signInStatement = "Sign in to Lagoon.Markets App"
+    val signInStatement = appDetails.signInStatement()
 
     // `connect` dispatches an association intent to MWA-compatible wallet apps.
     val result = remember {
@@ -98,59 +109,113 @@ fun SiwsScreen(sender: ActivityResultSender) {
             null
         )
     }
-    val buttonEnabled = remember { mutableStateOf(true) }
+
     val coroutineScope = rememberCoroutineScope()
+//    val sender = LocalActivityResultSender.current
+    val errorHandler = remember { mutableStateOf<String?>(null) }
+    val buttonEnabled = remember { mutableStateOf(true) }
+    val context = LocalContext.current
+    val activity = context as? Activity
 
-    result.value?.let {
-        when (it) {
-            is TransactionResult.Success -> {
-                // On success, an `AuthorizationResult` with a `signInResult` object is returned.
-                val siwsResult = it.authResult
-                val siwsSignInResult = siwsResult.signInResult
-                siwsSignInResult?.let {
-                    val siwsSignInResultToFfi = SiwsFfiAuthResult(
-                        publicKey = siwsSignInResult.publicKey.toList(),
-                        signedMessage = siwsSignInResult.signedMessage.toList(),
-                        signature = siwsSignInResult.signature.toList(),
-                        signatureType = siwsSignInResult.signatureType,
-                        authToken = siwsResult.authToken
-                    )
-
-                    val address = rustffiSiws(siwsSignInResultToFfi)
-
-                    Column {
-                        Text(address)
-                    }
-                }
-            }
-
-            is TransactionResult.NoWalletFound -> {
-                Text("No MWA compatible wallet app found on device.")
-            }
-
-            is TransactionResult.Failure -> {
-                Text("Error connecting to wallet: " + it.e.message)
-            }
-        }
-    } ?: Column {
-        ProgressGradientButton(
+    errorHandler.value?.let { error ->
+        ShowErrorAsBottomSheet(
+            title = "SIGN IN WITH SOLANA",
+            error = error,
+            imageID = R.drawable.wallet_error,
+            imageDescription = "SIWS Error",
+            buttonTextContent = "Ok",
             callback = {
-                buttonEnabled.value = false;
-
-                coroutineScope.launch {
-                    result.value = walletAdapter.signIn(
-                        sender,
-                        SignInWithSolana.Payload(domain, signInStatement)
-                    )
-                }
-            },
-            textContent = "Sign In With Solana",
-            enabled = buttonEnabled.value
+                errorHandler.value = null
+                activity?.recreate() //TODO
+            }
         )
     }
-}
 
-@Composable
-fun SiwsScreenView() {
+    Column(
+        modifier = Modifier
+            .fillMaxSize(),
+        verticalArrangement = Arrangement.SpaceAround,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Column(
+            modifier = Modifier
+                .weight(1f),
+            verticalArrangement = Arrangement.Top,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Image(
+                painter = painterResource(id = R.drawable.ic_launcher_background),
+                contentDescription = "Activities SVG Image",
+                modifier = Modifier.Companion.fillMaxWidth(.9f)
+            )
+            Spacer(Modifier.Companion.height(30.dp))
 
+            LagoonMarketsLogo()
+        }
+
+        Column(
+            Modifier
+                .weight(1f)
+                .padding(20.dp),
+            verticalArrangement = Arrangement.SpaceAround,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            TextPurpleMountainMajesty(
+                textContent = "Sign In with your Solana wallet to create a profile, it's that simple!",
+                fontSize = 20.sp
+            )
+
+            ProgressGradientButton(
+                {
+                    buttonEnabled.value = false
+                    coroutineScope.launch {
+                        // `connect` dispatches an association intent to MWA-compatible wallet apps.
+                        val result = walletAdapter.signIn(
+                            sender,
+                            SignInWithSolana.Payload(
+                                appDetails.domain(),
+                                appDetails.signInStatement()
+                            )
+                        )
+
+                        when (result) {
+                            is TransactionResult.Success -> {
+                                // On success, an `AuthorizationResult` with a `signInResult` object is returned.
+                                val signInAuthResult = result.authResult
+                                val signInResult = result.authResult.signInResult
+
+
+                                signInResult?.let {
+                                    val siwsSignInResultToFfi = SiwsFfiAuthResult(
+                                        publicKey = it.publicKey.toList(),
+                                        signedMessage = it.signedMessage.toList(),
+                                        signature = it.signature.toList(),
+                                        signatureType = it.signatureType,
+                                        authToken = signInAuthResult.authToken
+                                    )
+
+                                    try {
+                                        rustffiSiws(siwsSignInResultToFfi)
+                                        navController.navigate(DashboardRoute)
+                                    } catch (error: Exception) {
+                                        errorHandler.value = error.message
+                                    }
+                                }
+                            }
+
+                            is TransactionResult.NoWalletFound -> {
+                                errorHandler.value = "No MWA compatible wallet app found on device."
+                            }
+
+                            is TransactionResult.Failure -> {
+                                errorHandler.value = result.e.message
+                            }
+                        }
+                    }
+                },
+                "SIGN IN WITH SOLANA",
+                enabled = buttonEnabled.value
+            )
+        }
+    }
 }

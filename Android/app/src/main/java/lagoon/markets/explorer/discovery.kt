@@ -196,6 +196,16 @@ fun DiscoveredItem(
                                     Spacer(Modifier.width(5.dp))
                                     Box {
                                         TextWhite(
+                                            textContent = discoveryItem.amount,
+                                            fontFamily = commitMonoFamily,
+                                            fontSize = 15.sp,
+                                            maxLines = 1
+                                        )
+                                    }
+
+                                    Spacer(Modifier.width(5.dp))
+                                    Box {
+                                        TextWhite(
                                             textContent = it.symbol,
                                             fontFamily = commitMonoFamily,
                                             fontSize = 15.sp,
