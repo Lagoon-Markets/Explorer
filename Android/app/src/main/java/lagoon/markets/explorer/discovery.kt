@@ -45,6 +45,7 @@ import lagoon.markets.explorer.ui.theme.brushDarkHorizontalGradient
 import lagoon.markets.explorer.ui.theme.commitMonoFamily
 import lagoon.markets.explorer.ui.theme.poppinsFamily
 import lagoon.markets.explorer.ui.theme.smoochSansFamily
+import lagoon.markets.rustffiShortenBase58
 
 
 @Composable
@@ -123,92 +124,99 @@ fun DiscoveredItem(
                         )
                     )
                 )
-        )
-
-        Column(
-            verticalArrangement = Arrangement.SpaceBetween,
-            modifier = Modifier
-                .clip(RoundedCornerShape(8.dp))
-                .padding(10.dp)
+                .fillMaxSize()
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center,
-                modifier = Modifier.padding(5.dp),
-            ) {
-                Image(
-                    painter = painterResource(getSchemeIcon(discoveryItem.uriScheme)),
-                    contentDescription = getSchemeIconDescription(discoveryItem.uriScheme),
-                    modifier = Modifier.width(20.dp)
-                )
-                Spacer(Modifier.width(5.dp))
-                TextWhite(
-                    textContent = getX402UriSchemeText(discoveryItem.uriScheme),
-                    fontFamily = smoochSansFamily,
-                    fontSize = 25.sp
-                )
-            }
             Column(
                 verticalArrangement = Arrangement.SpaceBetween,
-                modifier = Modifier.padding(10.dp),
+                horizontalAlignment = Alignment.Start,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(8.dp))
+                    .padding(10.dp)
+                    .fillMaxSize()
             ) {
                 Row(
-                    horizontalArrangement = Arrangement.SpaceAround,
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth()
+                    horizontalArrangement = Arrangement.Start,
+                    modifier = Modifier
+                        .padding(5.dp)
+                        .fillMaxWidth(),
                 ) {
-                    Box(modifier = Modifier.weight(1f)) {
-                        AppText(
-                            textContent = discoveryItem.title ?: "",
-                            fontFamily = smoochSansFamily,
-                            fontSize = 30.sp,
-                            color = PurpleMountainMajesty
-                        )
-                    }
-                    Box(modifier = Modifier.weight(.4f)) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Center
-                        ) {
-                            discoveryItem.assetInfo?.let {
-                                Box {
-                                    Image(
-                                        painter = rememberAsyncImagePainter(
-                                            ImageRequest.Builder(LocalContext.current)
-                                                .data(it.logoUri)
-                                                .crossfade(true).build()
-                                        ),
-                                        contentDescription = null,
-                                        contentScale = ContentScale.Crop,
-                                        modifier = Modifier
-                                            .width(20.dp)
-                                            .clip(RoundedCornerShape(8.dp))
-                                            .background(Licorice) // fallback if image fails to load
-                                    )
+                    Image(
+                        painter = painterResource(getSchemeIcon(discoveryItem.uriScheme)),
+                        contentDescription = getSchemeIconDescription(discoveryItem.uriScheme),
+                        modifier = Modifier.width(20.dp)
+                    )
+                    Spacer(Modifier.width(5.dp))
+                    TextWhite(
+                        textContent = "${discoveryItem.uriScheme}",
+                        fontFamily = smoochSansFamily,
+                        fontSize = 25.sp
+                    )
+                }
+                Column(
+                    verticalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier
+                        .padding(10.dp)
+                        .fillMaxWidth(),
+                ) {
+                    Row(
+                        horizontalArrangement = Arrangement.SpaceAround,
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Box(modifier = Modifier.weight(1f)) {
+                            AppText(
+                                textContent = discoveryItem.title ?: "",
+                                fontFamily = smoochSansFamily,
+                                fontSize = 30.sp,
+                                color = PurpleMountainMajesty
+                            )
+                        }
+                        Box(modifier = Modifier.weight(.5f)) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                discoveryItem.assetInfo?.let {
+                                    Box {
+                                        Image(
+                                            painter = rememberAsyncImagePainter(
+                                                ImageRequest.Builder(LocalContext.current)
+                                                    .data(it.logoUri)
+                                                    .crossfade(true).build()
+                                            ),
+                                            contentDescription = null,
+                                            contentScale = ContentScale.Fit,
+                                            modifier = Modifier
+                                                .width(20.dp)
+                                                .background(Licorice) // fallback if image fails to load
+                                        )
+                                    }
+
+                                    Spacer(Modifier.width(5.dp))
+                                    Box {
+                                        TextWhite(
+                                            textContent = it.symbol,
+                                            fontFamily = commitMonoFamily,
+                                            fontSize = 15.sp,
+                                            maxLines = 1
+                                        )
+                                    }
                                 }
 
-                                Spacer(Modifier.width(5.dp))
-                                Box {
-                                    TextWhite(
-                                        textContent = it.symbol,
-                                        fontFamily = commitMonoFamily,
-                                        fontSize = 10.sp
-                                    )
-                                }
+
                             }
-
-
                         }
                     }
+                    AppText(
+                        textContent = discoveryItem.description ?: "",
+                        fontFamily = poppinsFamily,
+                        fontSize = 12.sp,
+                        textAlign = TextAlign.Start,
+                        lineHeight = 15.sp,
+                        fontWeight = FontWeight.Thin
+                    )
                 }
-                AppText(
-                    textContent = discoveryItem.description ?: "",
-                    fontFamily = poppinsFamily,
-                    fontSize = 12.sp,
-                    textAlign = TextAlign.Start,
-                    lineHeight = 15.sp,
-                    fontWeight = FontWeight.Thin
-                )
             }
         }
     }
@@ -280,6 +288,7 @@ fun DiscoveryItemView(
             modifier = Modifier
                 .weight(1f)
                 .fillMaxWidth(.9f)
+                .verticalScroll(rememberScrollState())
         ) {
             Box(
                 contentAlignment = Alignment.Center,
@@ -302,22 +311,21 @@ fun DiscoveryItemView(
                     contentScale = ContentScale.Crop,
                     modifier = Modifier
                         .height(200.dp)
-//                        .matchParentSize()
                         .background(
                             Licorice,
                         ) // fallback if image fails to load
                 )
             }
             Spacer(Modifier.height(15.dp))
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceAround,
+            Column(
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.Start,
                 modifier = Modifier.fillMaxWidth(.9f)
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.Start,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.fillMaxWidth()
                 ) {
                     Image(
                         painter = painterResource(getSchemeIcon(discoveryItem.uriScheme)),
@@ -331,16 +339,22 @@ fun DiscoveryItemView(
                         fontSize = 25.sp
                     )
                 }
+                Spacer(Modifier.height(20.dp))
                 Box(
                     modifier = Modifier
                         .background(
                             color = Licorice, shape = RoundedCornerShape(50.dp)
                         )
-                        .padding(horizontal = 15.dp, vertical = 5.dp)
-                        .weight(1f)
+                        .padding(horizontal = 15.dp, vertical = 10.dp)
+                        .fillMaxWidth()
                 ) {
-                    val uriSchemeText = getX402UriSchemeText(discoveryItem.uriScheme)
-                    TextWhite(textContent = uriSchemeText, fontSize = 20.sp)
+
+                    TextWhite(
+                        textContent = discoveryItem.uri,
+                        fontSize = 15.sp,
+                        fontFamily = commitMonoFamily,
+                        maxLines = 1
+                    )
                 }
             }
 
@@ -368,7 +382,6 @@ fun DiscoveryItemView(
                     color = PurpleMountainMajesty
                 )
             }
-
         }
 
         Column(
@@ -380,7 +393,46 @@ fun DiscoveryItemView(
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center,
+                horizontalArrangement = Arrangement.Start,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                TextPurpleMountainMajesty(
+                    textContent = "Pay To:",
+                    fontFamily = smoochSansFamily,
+                    fontSize = 25.sp
+                )
+                Spacer(Modifier.width(10.dp))
+                TextWhite(
+                    textContent = rustffiShortenBase58(discoveryItem.payTo),
+                    fontFamily = commitMonoFamily,
+                    fontSize = 20.sp
+                )
+            }
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Start,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                TextPurpleMountainMajesty(
+                    textContent = "Fee Payer:",
+                    fontFamily = smoochSansFamily,
+                    fontSize = 25.sp
+                )
+                Spacer(Modifier.width(10.dp))
+                TextWhite(
+                    textContent = if (discoveryItem.feePayer.isEmpty()) {
+                        "Me"
+                    } else {
+                        rustffiShortenBase58(discoveryItem.feePayer)
+                    },
+                    fontFamily = commitMonoFamily,
+                    fontSize = 20.sp
+                )
+            }
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Start,
             ) {
                 Box {
                     Image(
@@ -390,9 +442,9 @@ fun DiscoveryItemView(
                                 .crossfade(true).build()
                         ),
                         contentDescription = null,
-                        contentScale = ContentScale.Crop,
+                        contentScale = ContentScale.Fit,
                         modifier = Modifier
-                            .width(20.dp)
+                            .width(40.dp)
                             .background(Licorice) // fallback if image fails to load
                     )
                 }
@@ -403,7 +455,7 @@ fun DiscoveryItemView(
                 AppText(
                     textContent = amount,
                     fontFamily = commitMonoFamily,
-                    fontSize = 15.sp
+                    fontSize = 25.sp
                 )
 
             }

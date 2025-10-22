@@ -33,15 +33,12 @@ impl DiscoveryFfi {
             .map_err(|error: X402UriError| NativeError::InvalidX402Uri(error.to_string()))?;
 
         match scheme {
-            X402UriScheme::Https => Self::fetch_https(x402_resource_uri, scheme).await,
+            X402UriScheme::Https => Self::fetch_https(x402_resource_uri).await,
             _ => Err(NativeError::UnsupportedX402Scheme),
         }
     }
 
-    pub async fn fetch_https(
-        x402_resource_uri: &str,
-        x402_uri_scheme: X402UriScheme,
-    ) -> NativeResult<Vec<Self>> {
+    pub async fn fetch_https(x402_resource_uri: &str) -> NativeResult<Vec<Self>> {
         let owned_uri = x402_resource_uri.to_owned();
         let response = unblock(move || minreq::get(owned_uri).send())
             .await
@@ -57,6 +54,7 @@ impl DiscoveryFfi {
         let mut output = Vec::<Self>::new();
 
         parse_json.items.iter().try_for_each(|item| {
+            let uri_scheme: X402UriSchemeFfi = item.r#type.unwrap_or("https").into();
             let accepts = item
                 .accepts
                 .first()
@@ -65,7 +63,7 @@ impl DiscoveryFfi {
             let asset_info = AppStorage::get_store()?.get_token(accepts.asset())?;
 
             let info = Self {
-                uri_scheme: x402_uri_scheme.into(),
+                uri_scheme,
                 uri: x402_resource_uri.to_string(),
                 title: item.title.as_ref().map(|value| value.to_string()),
                 description: item.description.as_ref().map(|value| value.to_string()),
@@ -121,6 +119,16 @@ impl From<X402UriScheme> for X402UriSchemeFfi {
             X402UriScheme::A2a => Self::A2a,
             X402UriScheme::Https => Self::Https,
             X402UriScheme::Mcp => Self::Mcp,
+        }
+    }
+}
+
+impl From<&str> for X402UriSchemeFfi {
+    fn from(value: &str) -> Self {
+        match value.to_lowercase().as_str() {
+            "a2a" => Self::A2a,
+            "mcp" => Self::Mcp,
+            _ => Self::Https,
         }
     }
 }
