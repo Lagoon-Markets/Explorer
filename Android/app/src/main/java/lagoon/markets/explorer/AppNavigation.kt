@@ -3,8 +3,6 @@ package lagoon.markets.explorer
 import android.content.Intent
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.sp
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -16,7 +14,7 @@ import androidx.navigation.toRoute
 import kotlinx.serialization.Serializable
 import lagoon.markets.X402UriSchemeFfi
 import lagoon.markets.explorer.auth.SiwsSignup
-import lagoon.markets.explorer.ui.theme.commitMonoFamily
+import lagoon.markets.explorer.dashboard.Dashboard
 import lagoon.markets.explorer.x402_handlers.HandleDiscoveryRoute
 
 @Serializable
@@ -34,18 +32,18 @@ object SignUpRoute
 @Serializable
 data class DiscoveredItemRoute(
     var uriScheme: X402UriSchemeFfi,
-    var uri: kotlin.String,
-    var title: kotlin.String?,
-    var description: kotlin.String?,
-    var headerImage: kotlin.String?,
-    var amount: kotlin.String,
-    var asset: kotlin.String,
-    var payTo: kotlin.String,
-    var feePayer: kotlin.String,
-    var address: kotlin.String?,
-    var symbol: kotlin.String?,
-    var name: kotlin.String?,
-    var logoUri: kotlin.String?
+    var uri: String,
+    var title: String?,
+    var description: String?,
+    var headerImage: String?,
+    var amount: String,
+    var asset: String,
+    var payTo: String,
+    var feePayer: String,
+    var address: String?,
+    var symbol: String?,
+    var name: String?,
+    var logoUri: String?
 )
 
 @Composable
@@ -71,8 +69,10 @@ fun AppNavigation(
         }
 
         composable<DashboardRoute> {
-
-            Dashboard()
+            Dashboard(
+                appStateViewModel = appStateViewModel,
+                navController = navController
+            )
         }
 
         composable(
@@ -98,14 +98,4 @@ fun AppNavigation(
             DiscoveryItemView(navController, item)
         }
     }
-}
-
-@Composable
-fun Dashboard() {
-
-    TextPurpleMountainMajesty(
-        textContent = "DASHBOARD",
-        fontWeight = FontWeight.Bold,
-        fontFamily = commitMonoFamily, fontSize = 15.sp
-    )
 }
