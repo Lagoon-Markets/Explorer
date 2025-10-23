@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -105,6 +106,28 @@ fun AppLinearLoader() {
         trackColor = EnglishViolet,
         strokeCap = ProgressIndicatorDefaults.LinearStrokeCap,
     )
+}
+
+
+@Composable
+fun ScreenLoader(textContent: String) {
+    Column(
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(20.dp)
+    ) {
+        LagoonMarketsLogo()
+        Spacer(Modifier.height(50.dp))
+        TextPurpleMountainMajesty(
+            textContent = textContent,
+            fontFamily = smoochSansFamily,
+            fontSize = 25.sp
+        )
+        Spacer(Modifier.height(20.dp))
+        AppLinearLoader()
+    }
 }
 
 

@@ -1,6 +1,8 @@
 package lagoon.markets.explorer
 
 import android.content.Intent
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.navigation.NavType
@@ -15,10 +17,14 @@ import kotlinx.serialization.Serializable
 import lagoon.markets.X402UriSchemeFfi
 import lagoon.markets.explorer.auth.SiwsSignup
 import lagoon.markets.explorer.dashboard.Dashboard
+import lagoon.markets.explorer.notifications.AuthorizeNotifications
 import lagoon.markets.explorer.x402_handlers.HandleDiscoveryRoute
 
 @Serializable
 object CheckProfileInitializedRoute
+
+@Serializable
+object AuthorizeNotificationsRoute
 
 @Serializable
 object DashboardRoute
@@ -46,26 +52,31 @@ data class DiscoveredItemRoute(
     var logoUri: String?
 )
 
+@RequiresApi(Build.VERSION_CODES.TIRAMISU)
 @Composable
 fun AppNavigation(
+    activity: MainActivity,
     appStateViewModel: AppStateViewModel,
 ) {
     val navController = rememberNavController()
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()
-    navBackStackEntry?.destination?.route?.let { route ->
-        appLog("Navigated to route: $route")
-    }
+//    navBackStackEntry?.destination?.route?.let { route ->
+//        appLog("Navigated to route: $route")
+//    }
 
     NavHost(navController = navController, startDestination = CheckProfileInitializedRoute) {
         composable<CheckProfileInitializedRoute> {
-            CheckProfileInitialized(navController)
+            CheckProfileInitialized(activity, navController)
         }
         composable<OnboardingRoute> {
             OnboardingView(navController)
         }
         composable<SignUpRoute> {
             SiwsSignup(navController)
+        }
+        composable<AuthorizeNotificationsRoute> {
+            AuthorizeNotifications(activity, navController)
         }
 
         composable<DashboardRoute> {
