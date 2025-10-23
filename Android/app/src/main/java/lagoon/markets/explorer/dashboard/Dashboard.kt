@@ -2,6 +2,7 @@ package lagoon.markets.explorer.dashboard
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -72,32 +73,32 @@ fun Dashboard(
     val items = listOf(
         BottomNavigationItem(
             title = ROUTE_INBOX,
-            selectedIcon = ImageVector.vectorResource(R.drawable.ic_launcher_background),
-            unselectedIcon = ImageVector.vectorResource(R.drawable.ic_launcher_background),
+            selectedIcon = ImageVector.vectorResource(R.drawable.inbox),
+            unselectedIcon = ImageVector.vectorResource(R.drawable.inbox),
             hasNews = false,
         ),
         BottomNavigationItem(
             title = ROUTE_SCAN_QR,
-            selectedIcon = ImageVector.vectorResource(R.drawable.ic_launcher_background),
-            unselectedIcon = ImageVector.vectorResource(R.drawable.ic_launcher_background),
+            selectedIcon = ImageVector.vectorResource(R.drawable.qrcode_purple_mountain_magesty),
+            unselectedIcon = ImageVector.vectorResource(R.drawable.qrcode_purple_mountain_magesty),
             hasNews = false,
         ),
         BottomNavigationItem(
             title = ROUTE_DISCOVER,
-            selectedIcon = ImageVector.vectorResource(R.drawable.ic_launcher_background),
-            unselectedIcon = ImageVector.vectorResource(R.drawable.ic_launcher_background),
+            selectedIcon = ImageVector.vectorResource(R.drawable.discover),
+            unselectedIcon = ImageVector.vectorResource(R.drawable.discover),
             hasNews = false,
         ),
         BottomNavigationItem(
             title = ROUTE_SUBSCRIPTIONS,
-            selectedIcon = ImageVector.vectorResource(R.drawable.ic_launcher_background),
-            unselectedIcon = ImageVector.vectorResource(R.drawable.ic_launcher_background),
+            selectedIcon = ImageVector.vectorResource(R.drawable.subscribe),
+            unselectedIcon = ImageVector.vectorResource(R.drawable.subscribe),
             hasNews = false,
         ),
         BottomNavigationItem(
             title = ROUTE_PROFILE,
-            selectedIcon = ImageVector.vectorResource(R.drawable.ic_launcher_background),
-            unselectedIcon = ImageVector.vectorResource(R.drawable.ic_launcher_background),
+            selectedIcon = ImageVector.vectorResource(R.drawable.profile_avatar_purple_mountain_majesty),
+            unselectedIcon = ImageVector.vectorResource(R.drawable.profile_avatar_purple_mountain_majesty),
             hasNews = false,
         ),
     )
@@ -224,9 +225,19 @@ val glassBrush = Brush.linearGradient(
     )
 )
 
+
 @Composable
 fun Inbox() {
-    TextPurpleMountainMajesty(textContent = "Inbox")
+//    val context = LocalContext.current;
+//
+//    if (needsPromotedNotificationPermission()) {
+//        checkInitialization(context)
+//    } else {
+//        appLog("LIVE UPDATES: NOT SUPPORTED")
+//    }
+
+
+    Column() { TextPurpleMountainMajesty(textContent = "Inbox") }
 
 }
 
