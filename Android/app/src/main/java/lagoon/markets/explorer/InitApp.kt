@@ -1,7 +1,9 @@
 package lagoon.markets.explorer
 
 import android.app.Application
+import android.os.Build
 import androidx.activity.compose.LocalActivity
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -31,6 +33,7 @@ import com.solana.mobilewalletadapter.clientlib.ActivityResultSender
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import lagoon.markets.explorer.notifications.hasNotificationPermission
 import lagoon.markets.explorer.ui.theme.brushDarkVerticalGradient
 import lagoon.markets.explorer.ui.theme.poppinsFamily
 import lagoon.markets.explorer.ui.theme.smoochSansFamily
@@ -61,14 +64,16 @@ class AppStateViewModel(application: Application) : AndroidViewModel(application
 }
 
 
+@RequiresApi(Build.VERSION_CODES.TIRAMISU)
 @Composable
 fun InitApp(
+    activity: MainActivity,
     appStateViewModel: AppStateViewModel = viewModel(),
     sender: ActivityResultSender,
     paddingValues: PaddingValues
 ) {
     val initResult by appStateViewModel.appState.collectAsState() // Result<Unit>?
-    val activity = LocalActivity.current
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -91,7 +96,7 @@ fun InitApp(
             }
 
             initResult?.isSuccess == true -> {
-                AppNavigation(appStateViewModel)
+                AppNavigation(activity, appStateViewModel)
             }
 
             else -> { // initResult != null && isFailure
@@ -115,8 +120,9 @@ fun InitApp(
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.TIRAMISU)
 @Composable
-fun CheckProfileInitialized(navController: NavController) {
+fun CheckProfileInitialized(activity: MainActivity, navController: NavController) {
 
     val isProfileInitialized = remember { mutableStateOf<String?>(null) }
     var viewState by remember { mutableStateOf(LoadingState.Initial) }
@@ -148,7 +154,13 @@ fun CheckProfileInitialized(navController: NavController) {
         if (errorExists.value != null) {
             ShowAppError(errorExists.value!!)
         } else if (isProfileInitialized.value != null) {
-            navController.navigate(DashboardRoute)
+
+
+            if (hasNotificationPermission(activity)) {
+                navController.navigate(DashboardRoute)
+            } else {
+                navController.navigate(AuthorizeNotificationsRoute)
+            }
 
         } else {
             navController.navigate(OnboardingRoute)
