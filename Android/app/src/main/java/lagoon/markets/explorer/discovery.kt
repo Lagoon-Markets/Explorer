@@ -1,5 +1,6 @@
 package lagoon.markets.explorer
 
+import android.content.Intent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -17,11 +18,22 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CheckboxDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -31,10 +43,18 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.net.toUri
 import androidx.navigation.NavController
 import coil3.compose.rememberAsyncImagePainter
 import coil3.request.ImageRequest
 import coil3.request.crossfade
+import com.solana.mobilewalletadapter.clientlib.ActivityResultSender
+import com.solana.mobilewalletadapter.clientlib.ConnectionIdentity
+import com.solana.mobilewalletadapter.clientlib.MobileWalletAdapter
+import com.solana.mobilewalletadapter.clientlib.TransactionResult
+import com.solana.mobilewalletadapter.clientlib.successPayload
+import kotlinx.coroutines.launch
+import lagoon.markets.AppDetailsFfi
 import lagoon.markets.DiscoveryFfi
 import lagoon.markets.X402UriSchemeFfi
 import lagoon.markets.explorer.ui.theme.HanPurple
@@ -45,7 +65,12 @@ import lagoon.markets.explorer.ui.theme.brushDarkHorizontalGradient
 import lagoon.markets.explorer.ui.theme.commitMonoFamily
 import lagoon.markets.explorer.ui.theme.poppinsFamily
 import lagoon.markets.explorer.ui.theme.smoochSansFamily
+import lagoon.markets.rustffiConstructTx
+import lagoon.markets.rustffiFormatAmount
+import lagoon.markets.rustffiOptimizeTransaction
+import lagoon.markets.rustffiSendOptimizedTransaction
 import lagoon.markets.rustffiShortenBase58
+import lagoon.markets.rustffiToBase64
 
 
 @Composable
@@ -196,7 +221,10 @@ fun DiscoveredItem(
                                     Spacer(Modifier.width(5.dp))
                                     Box {
                                         TextWhite(
-                                            textContent = discoveryItem.amount,
+                                            textContent = rustffiFormatAmount(
+                                                discoveryItem.amount,
+                                                discoveryItem.assetInfo?.decimals ?: 0.toUByte()
+                                            ),
                                             fontFamily = commitMonoFamily,
                                             fontSize = 15.sp,
                                             maxLines = 1
@@ -287,6 +315,35 @@ fun X402RouteBar(x402CurrentUri: String) {
 fun DiscoveryItemView(
     navController: NavController, discoveryItem: DiscoveredItemRoute
 ) {
+    // `this` is the current Android activity
+    val appDetails = AppDetailsFfi()
+
+    val sender = LocalActivityResultSender.current
+    val solanaUri = appDetails.domain().toUri()
+    val iconUri = appDetails.favicon().toUri()
+    val identityName = appDetails.identity()
+
+    appLog(solanaUri.toString())
+    appLog(iconUri.toString())
+    appLog(identityName.toString())
+
+    // Construct the client
+    val walletAdapter = MobileWalletAdapter(
+        connectionIdentity = ConnectionIdentity(
+            identityUri = solanaUri,
+            iconUri = iconUri,
+            identityName = identityName
+        )
+    )
+
+    val showSheet = remember { mutableStateOf(false) }
+    val success = remember { mutableStateOf<String?>(null) }
+
+    var optimizeTransaction by remember { mutableStateOf(false) }
+    val coroutineScope = rememberCoroutineScope()
+    val errorExists = remember { mutableStateOf<String?>(null) }
+    val buttonEnabled = remember { mutableStateOf(true) }
+
     Column(
         verticalArrangement = Arrangement.SpaceBetween,
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -461,7 +518,7 @@ fun DiscoveryItemView(
 
                 Spacer(Modifier.width(5.dp))
                 val amount =
-                    "${discoveryItem.amount} ${discoveryItem.symbol ?: ""}"
+                    rustffiFormatAmount(discoveryItem.amount, discoveryItem.decimals?.toUByte())
                 AppText(
                     textContent = amount,
                     fontFamily = commitMonoFamily,
@@ -470,13 +527,63 @@ fun DiscoveryItemView(
 
             }
 
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Checkbox(
+                    checked = optimizeTransaction,
+                    onCheckedChange = { optimizeTransaction = it },
+                    colors = CheckboxDefaults.colors(
+                        checkedColor = HanPurple,          // fill when checked
+                        uncheckedColor = HanPurple,         // border when unchecked
+                        checkmarkColor = White,        // tick color
+                        disabledCheckedColor = Color.LightGray,
+                        disabledUncheckedColor = Color.DarkGray
+                    )
+                )
+                TextPurpleMountainMajesty(textContent = "Optimize Transaction", fontSize = 16.sp)
+            }
+
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
                     .fillMaxWidth()
             ) {
                 ProgressGradientButton(
-                    callback = {},
+                    enabled = buttonEnabled.value,
+                    callback = {
+                        buttonEnabled.value = false
+                        coroutineScope.launch {
+                            try {
+                                val resourceDetails = DiscoveryFfi(
+                                    uriScheme = discoveryItem.uriScheme,
+                                    uri = discoveryItem.uri,
+                                    title = discoveryItem.title,
+                                    description = discoveryItem.description,
+                                    headerImage = discoveryItem.headerImage,
+                                    amount = discoveryItem.amount,
+                                    asset = discoveryItem.asset,
+                                    payTo = discoveryItem.payTo,
+                                    maxtimeoutSeconds = discoveryItem.maxTimeoutSeconds ?: "",
+                                    feePayer = discoveryItem.feePayer,
+                                    assetInfo = null
+                                )
+                                success.value = signTx(
+                                    resourceDetails,
+                                    optimizeTransaction,
+                                    walletAdapter,
+                                    sender
+                                )
+                            } catch (error: Exception) {
+                                appLog("OPTIMIZED TX ERROR: ${error.toString()}")
+
+                                errorExists.value =
+                                    "Optimize transaction only works for Mainnet accounts that exist (are rent exempt). Error details: " + error.message
+                                showSheet.value = true
+                            }
+                        }
+                    },
                     textContent = "Pay with Solana",
                     fillMaxWidth = 1f
                 )
@@ -484,31 +591,90 @@ fun DiscoveryItemView(
         }
     }
 
-    //    var showSheet by remember { mutableStateOf(false) }
-//    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-//
-//    // Modal sheet
-//    if (showSheet.value) {
-//        ModalBottomSheet(
-//            onDismissRequest = { showSheet.value = false },
-//            sheetState = sheetState
-//        ) {
-//            Column(
-//                modifier = Modifier
-//                    .fillMaxWidth()
-//                    .padding(24.dp),
-//                horizontalAlignment = Alignment.CenterHorizontally
-//            ) {
-//                TextPurpleMountainMajesty(textContent = "This is a modal bottom sheet")
-//                Spacer(Modifier.height(16.dp))
-//                Button(onClick = { showSheet.value = false }) {
-//                    TextPurpleMountainMajesty(textContent = "Close")
-//                }
-//            }
-//        }
-//    }
+    if (showSheet.value) {
+        ErrorBottomSheet(errorExists, showSheet, { navController.navigate(DashboardRoute) })
+    }
+    if (success.value != null) {
+        appLog("SUCCESS VALUE: ${success}")
+
+        TxSuccessBottomSheet(
+            success = success.value!!,
+            { navController.navigate(DashboardRoute) })
+
+    }
+
 }
 
+suspend fun signTx(
+    resourceData: DiscoveryFfi,
+    isTxOptimized: Boolean,
+    walletAdapter: MobileWalletAdapter,
+    sender: ActivityResultSender
+): String {
+
+    if (isTxOptimized) {
+        appLog("OPTIMIZED TX")
+
+        val optimizedTxResult = rustffiOptimizeTransaction(resourceData, mainnet = true)
+
+        try {
+            val optimizedTx = optimizedTxResult
+            appLog("OPTIMIZED TX SUCCESS: ${optimizedTx}")
+
+            val result = walletAdapter.transact(sender) { signTransactions(arrayOf(optimizedTx)) }
+            return when (result) {
+                is TransactionResult.Success -> {
+                    appLog("Signing success")
+
+                    val signedTxBytes = result.successPayload?.signedPayloads?.first()
+                    if (signedTxBytes != null) {
+                        try {
+                            val success = rustffiSendOptimizedTransaction(signedTxBytes)
+
+                            success
+                        } catch (
+                            error: Exception
+                        ) {
+                            throw error
+                        }
+                    } else {
+                        throw Exception("Signed payload missing")
+                    }
+                }
+
+                is TransactionResult.NoWalletFound ->
+                    throw Exception("No MWA compatible wallet app found on device.")
+
+                is TransactionResult.Failure ->
+                    throw Exception("Error during transaction signing: ${result.e.message ?: "Unknown error"}")
+            }
+        } catch (error: Exception) {
+            throw Exception(error.message)
+        }
+    } else {
+        val tx = rustffiConstructTx(resourceData, mainnet = true)
+        val result = walletAdapter.transact(sender) {     // Issue a 'signTransactions' request
+            signAndSendTransactions(arrayOf(tx));
+        }
+
+        return when (result) {
+            is TransactionResult.Success -> {
+                val txSignatureBytes = result.successPayload?.signatures?.first()
+                if (txSignatureBytes != null) {
+                    rustffiToBase64(txSignatureBytes)
+                } else {
+                    throw Exception("Signed payload missing")
+                }
+            }
+
+            is TransactionResult.NoWalletFound ->
+                throw Exception("No MWA compatible wallet app found on device.")
+
+            is TransactionResult.Failure ->
+                throw Exception("Error during transaction signing: ${result.e.message ?: "Unknown error"}")
+        }
+    }
+}
 
 fun getX402UriSchemeText(scheme: X402UriSchemeFfi): String {
     return when (scheme) {
@@ -556,6 +722,70 @@ fun discoveryFfiToDiscoveredItemRoute(value: DiscoveryFfi): DiscoveredItemRoute 
         address = value.assetInfo?.address,
         symbol = value.assetInfo?.symbol,
         name = value.assetInfo?.name,
-        logoUri = value.assetInfo?.logoUri
+        logoUri = value.assetInfo?.logoUri,
+        maxTimeoutSeconds = value.maxtimeoutSeconds,
+        decimals = value.assetInfo?.decimals?.toInt()
     )
+}
+
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun TxSuccessBottomSheet(
+    success: String,
+    callback: () -> Unit
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val context = LocalContext.current
+    val showSheet = remember { mutableStateOf(true) }
+
+    // Modal sheet
+    if (showSheet.value) {
+        ModalBottomSheet(
+            onDismissRequest = {
+                showSheet.value = false
+                callback()
+            },
+            sheetState = sheetState,
+            containerColor = Licorice,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                LagoonMarketsLogo()
+                Spacer(Modifier.height(50.dp))
+                TextPurpleMountainMajesty(
+                    textContent = "Success",
+                    fontSize = 35.sp,
+                    fontFamily = smoochSansFamily
+                )
+                Spacer(Modifier.height(20.dp))
+                val link = "https://explorer.solana.com/tx/$success"
+                NonPriorityButton(
+                    callback = {
+                        val intent = Intent(Intent.ACTION_VIEW, link.toUri())
+                        context.startActivity(intent)
+                    },
+                    textContent = "View in Explorer",
+                    fillMaxWidth = 0.8f,
+                    enabled = true
+                )
+
+                Spacer(Modifier.height(50.dp))
+
+                GradientButton(
+                    callback = {
+                        showSheet.value = false
+                        callback()
+                    },
+                    "Close"
+                )
+            }
+        }
+    }
 }

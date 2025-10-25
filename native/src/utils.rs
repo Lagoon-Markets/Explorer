@@ -1,3 +1,4 @@
+use base64ct::{Base64, Encoding};
 use wincode::{SchemaRead, SchemaWrite};
 
 use crate::{NativeError, NativeResult};
@@ -39,6 +40,27 @@ impl Utils {
             .for_each(|char| shortened.push(*char));
 
         shortened
+    }
+
+    pub fn to_base64(bytes: &[u8]) -> String {
+        Base64::encode_string(bytes)
+    }
+
+    pub fn u64_to_float(amount: u64, decimals: u8) -> f64 {
+        10_usize
+            .checked_pow(decimals as u32)
+            .map(|dividend| amount as f64 / dividend as f64)
+            .unwrap_or_default()
+    }
+
+    pub fn format_float(amount: f64) -> String {
+        let s = format!("{:.6}", amount);
+        let s = s.trim_end_matches('0').trim_end_matches('.');
+        if s.is_empty() {
+            "0".to_string()
+        } else {
+            s.to_string()
+        }
     }
 }
 

@@ -2,6 +2,8 @@ pub type NativeResult<T> = Result<T, NativeError>;
 
 #[derive(thiserror::Error, uniffi::Error, Debug, PartialEq, Eq)]
 pub enum NativeError {
+    #[error("Expected the user's profile to be initialized in order to get the user's address to use in transactions. Sign In With Solana first to achieve this.")]
+    MissingUserAddress,
     #[error("Unable to initalize the apps storage. Error: {0}")]
     InitKv(String),
     #[error("The vector of `i8` from FFI should be at least 32 bytes long")]
@@ -42,6 +44,18 @@ pub enum NativeError {
     UnableToSerializeTokenValue(String),
     #[error("The entry `{0}` from the token list table is corrupted. Unable to deserialize into TokenInfo")]
     CorruptedTokenInfoEntry(String),
+    #[error("The amount could not be converted into an unsigned 64 bit integer number `2^64-1`")]
+    AmountNotU64,
+    #[error("Unable to serialize the Transaction into bytes")]
+    UnableToSerializeTransaction,
+    #[error("Creating the transfer checked instruction resulted in an error. Error `{0}`")]
+    InvalidTransferCheckedData(String),
+    #[error(
+        "Unabe to convert the base64 transaction to optimize into JSON for the `optimize-tx` route"
+    )]
+    UnableToEncodeBase64TxToJson,
+    #[error("Unable to decode the result of parsing the JSON from `optimize-tx` route. Is the data Base64?")]
+    UnableToDecodeOptimizedTx,
 }
 
 impl From<redb::Error> for NativeError {

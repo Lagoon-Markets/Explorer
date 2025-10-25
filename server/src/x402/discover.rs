@@ -6,7 +6,7 @@ use rusty_x402::{
     ResourceInfo, X402Version,
 };
 
-use crate::AllowedAssets;
+use crate::{AllowedAssets, SERVER_CONFIG};
 
 #[get("/discover")]
 pub fn x402_discover<'x>() -> Result<Json<DiscoveryPayload<'x>>, String> {
@@ -16,14 +16,15 @@ pub fn x402_discover<'x>() -> Result<Json<DiscoveryPayload<'x>>, String> {
     let extras = PaymentRequestExtras::new("");
     let mut resource1_requirements = PaymentRequirementsBuilder::new();
     resource1_requirements
-        .set_amount(10)
-        .set_asset(AllowedAssets::USDC_DEVNET.address)
+        .set_amount(500_000)
+        .set_asset(AllowedAssets::SOL.address)
         .set_description("Pay using USDC to access latest newsletter")
         .set_max_timeout_seconds(Duration::from_secs(60 * 5))
-        .set_recipient("67JmfPZkcYZm5wkzwF7csDCrNpNwWD8AiyWcLZYWmpyP")
+        .set_recipient(SERVER_CONFIG.resource_server_address())
         .set_resource(resource1_url)
         .set_extra(extras)
         .set_mime_as_json();
+
     let mut resource1 = ResourceInfo {
         resource: resource1_url,
         r#type: Option::Some("http"),

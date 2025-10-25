@@ -5,6 +5,6 @@ Cargo.lock
 .vscode
 **/Cargo.lock
 **/.vscode
-secrets.toml
+**/*secrets.toml
 **/.idea
 

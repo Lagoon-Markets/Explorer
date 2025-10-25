@@ -209,3 +209,8 @@ fun hasNotificationPermission(context: Context): Boolean {
 fun needsNotificationPermission(): Boolean {
     return Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
 }
+
+
+fun needsPromotedNotificationPermission(): Boolean {
+    return Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA
+}
