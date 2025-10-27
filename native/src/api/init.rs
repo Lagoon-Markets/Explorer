@@ -44,6 +44,6 @@ impl AppDetailsFfi {
 
     #[uniffi::method]
     pub fn favicon(&self) -> String {
-        "Lagoon.Markets-Favicon.png".to_string()
+        "assets/Lagoon.Markets-Favicon.png".to_string()
     }
 }

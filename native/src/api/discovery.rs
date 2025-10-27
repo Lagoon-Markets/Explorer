@@ -60,7 +60,21 @@ impl DiscoveryFfi {
                 .first()
                 .ok_or(NativeError::AtLeastOneAcceptsItemIsNeeded)?;
 
-            let asset_info = AppStorage::get_store()?.get_token(accepts.asset())?;
+            let mut asset_info = AppStorage::get_store()?.get_token(accepts.asset())?;
+
+            if asset_info.is_none() {
+                let solana_address = "11111111111111111111111111111111";
+                if accepts.asset().as_bytes() == solana_address.as_bytes() {
+                    asset_info = Some(TokenInfo {
+                        chainId: 101,
+                        address: solana_address.to_string(),
+                        symbol: "SOL".to_string(),
+                        name: "SOL".to_string(),
+                        decimals: 9,
+                        logoURI: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png".to_string(),
+                    })
+                }
+            }
 
             let info = Self {
                 uri_scheme,

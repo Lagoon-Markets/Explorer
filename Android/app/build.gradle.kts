@@ -53,6 +53,7 @@ dependencies {
     implementation(libs.androidx.compose.ui.text)
     implementation(libs.androidx.navigation.runtime.ktx)
     implementation(libs.androidx.compose.runtime.saveable)
+    implementation(libs.androidx.material3)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

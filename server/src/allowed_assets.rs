@@ -3,6 +3,8 @@ pub struct AllowedAssets;
 impl AllowedAssets {
     pub const USDC_DEVNET: AllowedAssetDetails =
         AllowedAssetDetails::new("Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuSzaG9Vp2KGtKJr", 6);
+    pub const SOL: AllowedAssetDetails =
+        AllowedAssetDetails::new("11111111111111111111111111111111", 9);
 }
 
 pub struct AllowedAssetDetails {

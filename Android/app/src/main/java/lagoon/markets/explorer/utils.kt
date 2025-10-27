@@ -24,6 +24,7 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.ProgressIndicatorDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -31,6 +32,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
@@ -216,6 +218,119 @@ fun ShowErrorAsBottomSheet(
                         textContent = buttonTextContent, brush = null,
                     )
                 }
+            }
+        }
+    }
+}
+
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SuccessBottomSheet(
+    success: String,
+    showSheet: MutableState<Boolean>,
+    callback: () -> Unit
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    // Modal sheet
+    if (showSheet.value) {
+        ModalBottomSheet(
+            onDismissRequest = {
+                showSheet.value = false
+                callback()
+            },
+            sheetState = sheetState,
+            containerColor = Licorice,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                LagoonMarketsLogo()
+                Spacer(Modifier.height(50.dp))
+                TextPurpleMountainMajesty(
+                    textContent = "Success",
+                    fontSize = 35.sp,
+                    fontFamily = smoochSansFamily
+                )
+                Spacer(Modifier.height(20.dp))
+
+                TextPurpleMountainMajesty(
+                    textContent = success,
+                    fontSize = 20.sp,
+                    fontFamily = poppinsFamily,
+                    textAlign = TextAlign.Left
+                )
+                Spacer(Modifier.height(50.dp))
+
+                GradientButton(
+                    callback = {
+                        showSheet.value = false
+                        callback()
+                    },
+                    "Close"
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ErrorBottomSheet(
+    error: MutableState<String?>,
+    showSheet: MutableState<Boolean>,
+    callback: () -> Unit
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    // Modal sheet
+    if (showSheet.value) {
+        ModalBottomSheet(
+            onDismissRequest = {
+                showSheet.value = false
+                error.value = null
+                callback()
+            },
+            sheetState = sheetState,
+            containerColor = Licorice,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                LagoonMarketsLogo()
+                Spacer(Modifier.height(50.dp))
+                TextPurpleMountainMajesty(
+                    textContent = "Encountered Error",
+                    fontSize = 35.sp,
+                    fontFamily = smoochSansFamily
+                )
+                Spacer(Modifier.height(20.dp))
+                TextPurpleMountainMajesty(
+                    textContent = error.value ?: "",
+                    fontSize = 20.sp,
+                    fontFamily = poppinsFamily,
+                    textAlign = TextAlign.Left
+                )
+                Spacer(Modifier.height(50.dp))
+                GradientButton(
+                    callback = {
+                        showSheet.value = false
+                        error.value = null
+                        callback()
+                    },
+                    "I understand"
+                )
             }
         }
     }

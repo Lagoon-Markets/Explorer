@@ -49,7 +49,9 @@ data class DiscoveredItemRoute(
     var address: String?,
     var symbol: String?,
     var name: String?,
-    var logoUri: String?
+    var logoUri: String?,
+    val maxTimeoutSeconds: String?,
+    val decimals: Int?,
 )
 
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
