@@ -56,6 +56,10 @@ pub enum NativeError {
     UnableToEncodeBase64TxToJson,
     #[error("Unable to decode the result of parsing the JSON from `optimize-tx` route. Is the data Base64?")]
     UnableToDecodeOptimizedTx,
+    #[error("The `largeIcon` parameter for live updates is not a valid base64 string")]
+    InvalidLiveUpdatesLargeIconBase64,
+    #[error("The `progressTrackerIcon` parameter for live updates is not a valid base64 string")]
+    InvalidLiveUpdatesProgressTrackerIconBase64,
 }
 
 impl From<redb::Error> for NativeError {

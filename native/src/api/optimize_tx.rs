@@ -84,17 +84,6 @@ pub async fn rustffi_send_optimized_transaction(tx: Vec<u8>) -> NativeResult<Str
 
     log_to_logcat(&(String::from("SEND OPTIMIZED tx input") + encoded_tx.as_str()));
 
-    // let optimized_tx_response = blocking::unblock(move || {
-    //     minreq::post("https://lagoon.markets/x402/send-optimized-tx")
-    //         .with_header("Content-Type", "application/json")
-    //         .with_body(encoded_tx)
-    //         .send()
-    // })
-    // .await
-    // .map_err(|error| {
-    //     NativeError::Https(String::from("Send Optimized : ") + error.to_string().as_str())
-    // })?;
-
     let optimized_tx_response: String = ureq::post("https://lagoon.markets/x402/send-optimized-tx")
         .header("Content-Type", "application/json")
         .send(encoded_tx)

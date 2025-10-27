@@ -54,6 +54,8 @@ dependencies {
     implementation(libs.androidx.navigation.runtime.ktx)
     implementation(libs.androidx.compose.runtime.saveable)
     implementation(libs.androidx.material3)
+    implementation(libs.accompanist.adaptive)
+    implementation(libs.accompanist.permissions)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

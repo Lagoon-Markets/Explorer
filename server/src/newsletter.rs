@@ -1,14 +1,51 @@
+use std::collections::VecDeque;
 use std::time::Duration;
 
-use common::{CommonHeaders, SolanaChain, X402400BadRequest};
-use rocket::http;
-use rocket::request::Request;
+use common::{
+    CommonHeaders, CommonUtils, EventSourceData, EventSourceProgressPoint,
+    EventSourceProgressSegment, EventSourceProgressStyle, SolanaChain, X402400BadRequest,
+};
+use rocket::http::{self, Status};
+use rocket::request::{Outcome, Request};
+use rocket::response::stream::{Event, EventStream};
 use rocket::response::{self, Responder, Response};
+use rocket::tokio::time;
 use rusty_x402::PaymentRequestExtras;
 use rusty_x402::X_PAYMENT_HEADER_KEY;
 use rusty_x402::{PaymentRequirementsBuilder, PaymentRequirementsResponse};
 
 use crate::{AllowedAssets, SERVER_CONFIG};
+
+pub const NEWSLETTER_URI: &str = "https://lagoon.markets/latest_newsletter";
+pub const VOTING: &str = "https://lagoon.markets/x402/voting";
+
+#[get("/voting")]
+pub fn voting_handler() -> Result<rocket::response::stream::EventStream![Event], (Status, String)> {
+    let mut events = create_test_events()
+        .into_iter()
+        .map(|value| serde_json::to_string(&value))
+        .collect::<Result<VecDeque<String>, serde_json::Error>>()
+        .or(Err((
+            Status::InternalServerError,
+            "Unable to serialize eventsource data".to_string(),
+        )))?;
+
+    Ok(EventStream! {
+     let mut interval = time::interval(Duration::from_secs(3));
+         interval.tick().await; // wait before sending the first event
+          loop {
+
+            if let Some(value) = events.pop_front() {
+                yield Event::data(value).id("streaming");
+            }else {
+                yield Event::data("").id("done");
+                return;
+            }
+
+            interval.tick().await;
+        }
+    })
+}
 
 #[get("/latest_newsletter")]
 pub(crate) async fn latest_newsletter() -> X402HttpResponse {
@@ -19,7 +56,7 @@ pub struct X402HttpResponse;
 
 impl<'r> Responder<'r, 'static> for X402HttpResponse {
     fn respond_to(self, req: &'r Request<'_>) -> response::Result<'static> {
-        let latest_newsletter_uri = "https://inthetrenches.cloud/latest_newsletter";
+        let latest_newsletter_uri = NEWSLETTER_URI;
         let json_body;
         let status: http::Status;
 
@@ -115,17 +152,140 @@ fn construct_response<'x>(
 
     let mut requirement = PaymentRequirementsBuilder::new();
     requirement
-        .set_amount(1 * 10u64.pow(6))
+        .set_amount((0.10 * 10f64.powi(6)) as u64)
         .set_asset(asset.address)
         .set_description("Read the latest on Solana developer tooling.")
         .set_recipient(SERVER_CONFIG.resource_server_address())
         .set_mime_as_json()
         .set_max_timeout_seconds(Duration::from_secs(100))
-        .set_resource("https://inthetrenches.cloud")
+        .set_resource(NEWSLETTER_URI)
         .set_extra(extra);
 
     let mut body = PaymentRequirementsResponse::new();
     body.add_payment_requirement(requirement.build().unwrap());
 
     Ok(body)
+}
+
+fn create_test_events() -> Vec<EventSourceData> {
+    let point_color = "#FF00FFFF";
+    let segment_color = "#FFFFFFFF";
+
+    let progress_style_input = EventSourceProgressStyle {
+        points: vec![
+            EventSourceProgressPoint {
+                point: 0,
+                color: point_color.into(),
+            },
+            EventSourceProgressPoint {
+                point: 25,
+                color: point_color.into(),
+            },
+            EventSourceProgressPoint {
+                point: 50,
+                color: point_color.into(),
+            },
+            EventSourceProgressPoint {
+                point: 75,
+                color: point_color.into(),
+            },
+            EventSourceProgressPoint {
+                point: 100,
+                color: point_color.into(),
+            },
+        ],
+        segments: vec![
+            EventSourceProgressSegment {
+                segment: 25,
+                color: segment_color.to_string(),
+            },
+            EventSourceProgressSegment {
+                segment: 25,
+                color: segment_color.to_string(),
+            },
+            EventSourceProgressSegment {
+                segment: 25,
+                color: segment_color.to_string(),
+            },
+            EventSourceProgressSegment {
+                segment: 25,
+                color: segment_color.to_string(),
+            },
+        ],
+    };
+
+    let init = EventSourceData {
+        content_title: "Vote open".to_string(),
+        content_text: "AI agent preparing to cast their vote...".to_string(),
+        short_critical_text: "Placing".to_string(),
+
+        progress: EventSourceProgressPoint {
+            point: 0,
+            color: point_color.to_string(),
+        },
+        is_progress_indeterminate: true,
+        actions: vec![],
+        style: progress_style_input.clone(),
+    };
+
+    let preparing = EventSourceData {
+        content_title: "Vote cast in favour".to_string(),
+        content_text: "The AI agent decided in favour using HTTP/3 on AI agents DAO peer-to-peer network on double zero".to_string(),
+        short_critical_text: "Vote Cast".to_string(),
+
+        progress: EventSourceProgressPoint {
+            point: 25,
+            color: point_color.to_string(),
+        },
+        actions: vec![],
+        is_progress_indeterminate: false,
+        style: progress_style_input.clone(),
+    };
+
+    let en_route = EventSourceData {
+        content_title: "Vote still ongoing".to_string(),
+        content_text: "Other AI agents are still voting. Current vote rate at 67%.".to_string(),
+        short_critical_text: "Vote ongoing".to_string(),
+
+        progress: EventSourceProgressPoint {
+            point: 50,
+            color: point_color.to_string(),
+        },
+        actions: vec![],
+        style: progress_style_input.clone(),
+        is_progress_indeterminate: false,
+    };
+
+    let arriving = EventSourceData {
+        content_title: "All agent votes cast".to_string(),
+        content_text: "Other AI agents have finished casting their votes. Tallying...".to_string(),
+        short_critical_text: "On route".to_string(),
+
+        progress: EventSourceProgressPoint {
+            point: 75,
+            color: point_color.to_string(),
+        },
+        actions: vec!["Tip Agent".to_string(), "Got it".to_string()],
+
+        style: progress_style_input.clone(),
+        is_progress_indeterminate: false,
+    };
+
+    let delivered = EventSourceData {
+        content_title: "Voting closed".to_string(),
+        content_text:
+            "The outcome was 98% AI agents in favour of HTTP/3 upgrade. You won this election :)"
+                .to_string(),
+        short_critical_text: "You won (98%)".to_string(),
+
+        progress: EventSourceProgressPoint {
+            point: 100,
+            color: point_color.to_string(),
+        },
+        actions: vec!["View votes".to_string()],
+        style: progress_style_input.clone(),
+        is_progress_indeterminate: false,
+    };
+
+    vec![init, preparing, en_route, arriving, delivered]
 }
