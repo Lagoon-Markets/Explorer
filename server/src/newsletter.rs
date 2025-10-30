@@ -220,9 +220,9 @@ fn create_test_events() -> Vec<EventSourceData> {
     };
 
     let init = EventSourceData {
-        content_title: "Vote open".to_string(),
-        content_text: "AI agent preparing to cast their vote...".to_string(),
-        short_critical_text: "Placing".to_string(),
+        content_title: "Launch date 2026".to_string(),
+        content_text: "The book will be launched at Breakpoint 2026".to_string(),
+        short_critical_text: "Launch date set".to_string(),
 
         progress: EventSourceProgressPoint {
             point: 0,
@@ -234,9 +234,11 @@ fn create_test_events() -> Vec<EventSourceData> {
     };
 
     let preparing = EventSourceData {
-        content_title: "Vote cast in favour".to_string(),
-        content_text: "The AI agent decided in favour using HTTP/3 on AI agents DAO peer-to-peer network on double zero".to_string(),
-        short_critical_text: "Vote Cast".to_string(),
+        content_title: "Breakpoint 2026 is almost here".to_string(),
+        content_text:
+            "Breakpoint is almost here. Toly the Great will launch his new book. It's gonna be epic"
+                .to_string(),
+        short_critical_text: "Breakpoint 2026".to_string(),
 
         progress: EventSourceProgressPoint {
             point: 25,
@@ -248,9 +250,9 @@ fn create_test_events() -> Vec<EventSourceData> {
     };
 
     let en_route = EventSourceData {
-        content_title: "Vote still ongoing".to_string(),
-        content_text: "Other AI agents are still voting. Current vote rate at 67%.".to_string(),
-        short_critical_text: "Vote ongoing".to_string(),
+        content_title: "Sneek preview of the book".to_string(),
+        content_text: "Toly the great offered a sneek preview of his book. It will dive deep into how Solana is competing with the NASDAQ.".to_string(),
+        short_critical_text: "Sneek preview".to_string(),
 
         progress: EventSourceProgressPoint {
             point: 50,
@@ -262,9 +264,10 @@ fn create_test_events() -> Vec<EventSourceData> {
     };
 
     let arriving = EventSourceData {
-        content_title: "All agent votes cast".to_string(),
-        content_text: "Other AI agents have finished casting their votes. Tallying...".to_string(),
-        short_critical_text: "On route".to_string(),
+        content_title: "Breakpoint 2026 is here".to_string(),
+        content_text: "Breakpoint 2026 is live. Toly the Great will launch his book today!"
+            .to_string(),
+        short_critical_text: "Breakpoint live".to_string(),
 
         progress: EventSourceProgressPoint {
             point: 75,
@@ -279,15 +282,15 @@ fn create_test_events() -> Vec<EventSourceData> {
     let delivered = EventSourceData {
         content_title: "Voting closed".to_string(),
         content_text:
-            "The outcome was 98% AI agents in favour of HTTP/3 upgrade. You won this election :)"
+            "Toly the Great has launched his book `Building tokenized trading solutions`. You can get a copy now :)"
                 .to_string(),
-        short_critical_text: "You won (98%)".to_string(),
+        short_critical_text: "Book launched :)".to_string(),
 
         progress: EventSourceProgressPoint {
             point: 100,
             color: point_color.to_string(),
         },
-        actions: vec!["View votes".to_string()],
+        actions: vec!["Buy Now".to_string()],
         style: progress_style_input.clone(),
         is_progress_indeterminate: false,
     };

@@ -18,7 +18,7 @@ pub fn x402_discover<'x>() -> Result<Json<DiscoveryPayload<'x>>, String> {
     resource1_requirements
         .set_amount(500_000)
         .set_asset(AllowedAssets::SOL.address)
-        .set_description("Pay using USDC to access latest newsletter")
+        .set_description("Pay using USDC to access the eBook")
         .set_max_timeout_seconds(Duration::from_secs(60 * 5))
         .set_recipient(SERVER_CONFIG.resource_server_address())
         .set_resource(resource1_url)
@@ -33,9 +33,9 @@ pub fn x402_discover<'x>() -> Result<Json<DiscoveryPayload<'x>>, String> {
             String::from("Error buildng resource") + error.to_string().as_str()
         })?]),
         header_image: Some("https://lagoon.markets/typewriter.jpg".into()),
-        title: Some("Latest Newsletter".into()),
+        title: Some("Conqueror of Blockchains; Taker of Markets".into()),
         description: Some(
-            "Get latest insights on onchain activity and developer productivity".into(),
+            "Toly the Great provides insights on how the Solana blockchain is transforming financial markets at the speed of light.".into(),
         ),
         last_updated: u64::default(),
         metadata: Option::default(),
@@ -47,7 +47,7 @@ pub fn x402_discover<'x>() -> Result<Json<DiscoveryPayload<'x>>, String> {
     resource2_requirements
         .set_amount(500_000)
         .set_asset(AllowedAssets::SOL.address)
-        .set_description("View voting live updates")
+        .set_description("View timeline live updates")
         .set_max_timeout_seconds(Duration::from_secs(60 * 5))
         .set_recipient(SERVER_CONFIG.resource_server_address())
         .set_resource(resource2_url)
@@ -62,8 +62,8 @@ pub fn x402_discover<'x>() -> Result<Json<DiscoveryPayload<'x>>, String> {
             String::from("Error buildng resource") + error.to_string().as_str()
         })?]),
         header_image: Some("https://lagoon.markets/typewriter.jpg".into()),
-        title: Some("Voting Live Updates".into()),
-        description: Some("View the current voting live updates from our AI agent".into()),
+        title: Some("Live Updates on the timeline for new eBook release".into()),
+        description: Some("Get timelines on Toly the Great upcoming book `Building tokenized trading solutions` from our AI agent".into()),
         last_updated: u64::default(),
         metadata: Option::default(),
     };
