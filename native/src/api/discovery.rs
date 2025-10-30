@@ -1,5 +1,6 @@
 use blocking::unblock;
 use rusty_x402::DiscoveryPayload;
+use wincode::{SchemaRead, SchemaWrite};
 use x402_uri::{X402UriAction, X402UriError, X402UriScheme};
 
 use crate::{AppStorage, NativeError, NativeResult, TokenInfo};
@@ -11,7 +12,7 @@ pub async fn rustffi_discover_resources(
     DiscoveryFfi::fetch(&x402_resource_uri).await
 }
 
-#[derive(Debug, uniffi::Record)]
+#[derive(Debug, uniffi::Record, PartialEq, Eq, PartialOrd, Ord, Clone, SchemaRead, SchemaWrite)]
 pub struct DiscoveryFfi {
     pub uri_scheme: X402UriSchemeFfi,
     pub uri: String,
@@ -78,7 +79,7 @@ impl DiscoveryFfi {
 
             let info = Self {
                 uri_scheme,
-                uri: x402_resource_uri.to_string(),
+                uri: item.resource.to_string(),
                 title: item.title.as_ref().map(|value| value.to_string()),
                 description: item.description.as_ref().map(|value| value.to_string()),
                 header_image: item.header_image.as_ref().map(|value| value.to_string()),
@@ -119,7 +120,20 @@ impl From<X402UriAction> for X402UriActionFfi {
     }
 }
 
-#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord, Default, uniffi::Enum)]
+#[derive(
+    Debug,
+    Clone,
+    Copy,
+    Hash,
+    PartialEq,
+    Eq,
+    PartialOrd,
+    Ord,
+    Default,
+    uniffi::Enum,
+    SchemaRead,
+    SchemaWrite,
+)]
 pub enum X402UriSchemeFfi {
     #[default]
     Https,

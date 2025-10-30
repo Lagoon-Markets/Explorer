@@ -12,21 +12,15 @@ import android.os.Build
 import android.provider.Settings
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -56,39 +50,39 @@ import lagoon.markets.EventListenerFfi
 import lagoon.markets.EventSourceDataFfi
 import lagoon.markets.explorer.R
 
-@RequiresApi(Build.VERSION_CODES.BAKLAVA)
-@Composable
-fun LiveUpdates(eventsourceUri: Uri) {
-    val notificationManager =
-        LocalContext.current.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-    SnackbarNotificationManager.initialize(
-        LocalContext.current.applicationContext,
-        notificationManager
-    )
-    val scope = rememberCoroutineScope()
-    val snackbarHostState = remember { SnackbarHostState() }
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-    ) {
-        NotificationPermission()
-        Spacer(modifier = Modifier.height(4.dp))
-        NotificationPostPromotedPermission()
-        Text(stringResource(R.string.live_update_summary_text))
-        Spacer(modifier = Modifier.height(4.dp))
-        Button(
-            onClick = {
-                onCheckout(eventsourceUri)
-                scope.launch {
-                    snackbarHostState.showSnackbar("Voting Started")
-                }
-            },
-        ) {
-            Text("Checkout")
-        }
-    }
-}
+//@RequiresApi(Build.VERSION_CODES.BAKLAVA)
+//@Composable
+//fun LiveUpdates(eventsourceUri: Uri) {
+//    val notificationManager =
+//        LocalContext.current.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+//    SnackbarNotificationManager.initialize(
+//        LocalContext.current.applicationContext,
+//        notificationManager
+//    )
+//    val scope = rememberCoroutineScope()
+//    val snackbarHostState = remember { SnackbarHostState() }
+//
+//    Column(
+//        modifier = Modifier
+//            .fillMaxSize()
+//    ) {
+//        NotificationPermission()
+//        Spacer(modifier = Modifier.height(4.dp))
+//        NotificationPostPromotedPermission()
+//        Text(stringResource(R.string.live_update_summary_text))
+//        Spacer(modifier = Modifier.height(4.dp))
+//        Button(
+//            onClick = {
+//                onCheckout(eventsourceUri)
+//                scope.launch {
+//                    snackbarHostState.showSnackbar("Voting Started")
+//                }
+//            },
+//        ) {
+//            Text("Checkout")
+//        }
+//    }
+//}
 
 
 @RequiresApi(Build.VERSION_CODES.BAKLAVA)
