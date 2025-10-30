@@ -1,5 +1,5 @@
 [workspace]
-members = ["client", "common", "native", "server", "x402-uri"]
+members = ["common", "native", "server", "x402-uri"]
 
 resolver = "3"
 
