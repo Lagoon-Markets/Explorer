@@ -2,7 +2,6 @@ package lagoon.markets.explorer.dashboard
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -48,7 +47,7 @@ import lagoon.markets.explorer.ui.theme.RussianViolet
 import lagoon.markets.explorer.ui.theme.White
 
 
-const val ROUTE_INBOX = "Inbox"
+const val ROUTE_HISTORY = "History"
 const val ROUTE_SCAN_QR = "Scan QR"
 
 const val ROUTE_DISCOVER = "Discover"
@@ -72,7 +71,7 @@ fun Dashboard(
 
     val items = listOf(
         BottomNavigationItem(
-            title = ROUTE_INBOX,
+            title = ROUTE_HISTORY,
             selectedIcon = ImageVector.vectorResource(R.drawable.inbox),
             unselectedIcon = ImageVector.vectorResource(R.drawable.inbox),
             hasNews = false,
@@ -201,11 +200,11 @@ fun Dashboard(
         ) {
             NavHost(
                 navController = dashboardNavController,
-                startDestination = ROUTE_INBOX,
+                startDestination = ROUTE_HISTORY,
                 modifier = Modifier.fillMaxSize()
             ) {
-                composable(ROUTE_INBOX) {
-                    Inbox()
+                composable(ROUTE_HISTORY) {
+                    Resources(navController, dashboardNavController)
                 }
                 composable(ROUTE_SCAN_QR) { ScanQR() }
                 composable(ROUTE_DISCOVER) {
@@ -225,21 +224,6 @@ val glassBrush = Brush.linearGradient(
     )
 )
 
-
-@Composable
-fun Inbox() {
-//    val context = LocalContext.current;
-//
-//    if (needsPromotedNotificationPermission()) {
-//        checkInitialization(context)
-//    } else {
-//        appLog("LIVE UPDATES: NOT SUPPORTED")
-//    }
-
-
-    Column() { TextPurpleMountainMajesty(textContent = "Inbox") }
-
-}
 
 @Composable
 fun Subscriptions() {

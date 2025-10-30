@@ -60,6 +60,10 @@ pub enum NativeError {
     InvalidLiveUpdatesLargeIconBase64,
     #[error("The `progressTrackerIcon` parameter for live updates is not a valid base64 string")]
     InvalidLiveUpdatesProgressTrackerIconBase64,
+    #[error("Unable to serialize a X402Resource to DB")]
+    SerializeX402DataToBytes,
+    #[error("Unable to deserialize a X402Resource from DB")]
+    DeserializeX402Resource,
 }
 
 impl From<redb::Error> for NativeError {

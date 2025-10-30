@@ -20,28 +20,33 @@ pub const NEWSLETTER_URI: &str = "https://lagoon.markets/latest_newsletter";
 pub const VOTING: &str = "https://lagoon.markets/x402/voting";
 
 #[get("/voting")]
-pub fn voting_handler() -> Result<rocket::response::stream::EventStream![Event], (Status, String)> {
+pub async fn voting_handler() -> Result<rocket::response::stream::EventStream![], (Status, String)>
+{
+    use rocket::response::stream::{Event, EventStream};
+    use rocket::tokio::time::{self, Duration};
+    use std::collections::VecDeque;
+
     let mut events = create_test_events()
         .into_iter()
         .map(|value| serde_json::to_string(&value))
         .collect::<Result<VecDeque<String>, serde_json::Error>>()
-        .or(Err((
-            Status::InternalServerError,
-            "Unable to serialize eventsource data".to_string(),
-        )))?;
+        .map_err(|_| {
+            (
+                Status::InternalServerError,
+                "Unable to serialize eventsource data".to_string(),
+            )
+        })?;
 
     Ok(EventStream! {
-     let mut interval = time::interval(Duration::from_secs(3));
-         interval.tick().await; // wait before sending the first event
-          loop {
-
+        let mut interval = time::interval(Duration::from_secs(3));
+        interval.tick().await; // wait before sending the first event
+        loop {
             if let Some(value) = events.pop_front() {
                 yield Event::data(value).id("streaming");
-            }else {
+            } else {
                 yield Event::data("").id("done");
-                return;
+                break;
             }
-
             interval.tick().await;
         }
     })

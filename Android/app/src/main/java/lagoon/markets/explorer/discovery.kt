@@ -1,5 +1,7 @@
 package lagoon.markets.explorer
 
+import android.app.NotificationManager
+import android.content.Context
 import android.content.Intent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -22,6 +24,7 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -57,6 +60,9 @@ import kotlinx.coroutines.launch
 import lagoon.markets.AppDetailsFfi
 import lagoon.markets.DiscoveryFfi
 import lagoon.markets.X402UriSchemeFfi
+import lagoon.markets.explorer.notifications.SnackbarNotificationManager
+import lagoon.markets.explorer.notifications.needsPromotedNotificationPermission
+import lagoon.markets.explorer.notifications.onCheckout
 import lagoon.markets.explorer.ui.theme.HanPurple
 import lagoon.markets.explorer.ui.theme.Licorice
 import lagoon.markets.explorer.ui.theme.PurpleMountainMajesty
@@ -315,34 +321,6 @@ fun X402RouteBar(x402CurrentUri: String) {
 fun DiscoveryItemView(
     navController: NavController, discoveryItem: DiscoveredItemRoute
 ) {
-    // `this` is the current Android activity
-    val appDetails = AppDetailsFfi()
-
-    val sender = LocalActivityResultSender.current
-    val solanaUri = appDetails.domain().toUri()
-    val iconUri = appDetails.favicon().toUri()
-    val identityName = appDetails.identity()
-
-    appLog(solanaUri.toString())
-    appLog(iconUri.toString())
-    appLog(identityName.toString())
-
-    // Construct the client
-    val walletAdapter = MobileWalletAdapter(
-        connectionIdentity = ConnectionIdentity(
-            identityUri = solanaUri,
-            iconUri = iconUri,
-            identityName = identityName
-        )
-    )
-
-    val showSheet = remember { mutableStateOf(false) }
-    val success = remember { mutableStateOf<String?>(null) }
-
-    var optimizeTransaction by remember { mutableStateOf(false) }
-    val coroutineScope = rememberCoroutineScope()
-    val errorExists = remember { mutableStateOf<String?>(null) }
-    val buttonEnabled = remember { mutableStateOf(true) }
 
     Column(
         verticalArrangement = Arrangement.SpaceBetween,
@@ -451,143 +429,225 @@ fun DiscoveryItemView(
             }
         }
 
-        Column(
-            verticalArrangement = Arrangement.SpaceAround,
-            horizontalAlignment = Alignment.CenterHorizontally,
+        Box(
+            contentAlignment = Alignment.Center,
             modifier = Modifier
-                .fillMaxWidth(.8f)
                 .weight(.5f)
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Start,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                TextPurpleMountainMajesty(
-                    textContent = "Pay To:",
-                    fontFamily = smoochSansFamily,
-                    fontSize = 25.sp
+            if (discoveryItem.uriScheme == X402UriSchemeFfi.A2A) {
+                LiveUpdates(
+                    navController, discoveryItem
                 )
-                Spacer(Modifier.width(10.dp))
-                TextWhite(
-                    textContent = rustffiShortenBase58(discoveryItem.payTo),
-                    fontFamily = commitMonoFamily,
-                    fontSize = 20.sp
+            } else {
+                PayableResource(
+                    navController, discoveryItem
                 )
             }
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Start,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                TextPurpleMountainMajesty(
-                    textContent = "Fee Payer:",
-                    fontFamily = smoochSansFamily,
-                    fontSize = 25.sp
-                )
-                Spacer(Modifier.width(10.dp))
-                TextWhite(
-                    textContent = if (discoveryItem.feePayer.isEmpty()) {
-                        "Me"
-                    } else {
-                        rustffiShortenBase58(discoveryItem.feePayer)
-                    },
-                    fontFamily = commitMonoFamily,
-                    fontSize = 20.sp
+        }
+    }
+
+
+}
+
+@Composable
+fun LiveUpdates(navController: NavController, discoveryItem: DiscoveredItemRoute) {
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        if (needsPromotedNotificationPermission()) {
+            val notificationManager =
+                LocalContext.current.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            SnackbarNotificationManager.initialize(
+                LocalContext.current.applicationContext,
+                notificationManager
+            )
+            val scope = rememberCoroutineScope()
+            val snackbarHostState = remember { SnackbarHostState() }
+
+
+            ProgressGradientButton(
+                callback = {
+                    onCheckout(eventsourceUri = discoveryItem.uri.toUri())
+                    scope.launch {
+                        snackbarHostState.showSnackbar("Voting Started")
+                    }
+                },
+                textContent = "View live updates"
+            )
+        } else {
+            TextPurpleMountainMajesty(
+                maxLines = Int.MAX_VALUE,
+                textContent = "This feature requires Android 16 to work. It shows how AI agents can use the live updates in Android 16+ to stream updates of long running tasks to a user's device. Keeping them informed!"
+            )
+        }
+    }
+}
+
+@Composable
+fun PayableResource(navController: NavController, discoveryItem: DiscoveredItemRoute) {
+    // `this` is the current Android activity
+    val appDetails = AppDetailsFfi()
+    var optimizeTransaction by remember { mutableStateOf(false) }
+    val coroutineScope = rememberCoroutineScope()
+
+    val sender = LocalActivityResultSender.current
+    val solanaUri = appDetails.domain().toUri()
+    val iconUri = appDetails.favicon().toUri()
+    val identityName = appDetails.identity()
+
+
+    val showSheet = remember { mutableStateOf(false) }
+    val success = remember { mutableStateOf<String?>(null) }
+
+    val errorExists = remember { mutableStateOf<String?>(null) }
+    val buttonEnabled = remember { mutableStateOf(true) }
+
+    // Construct the client
+    val walletAdapter = MobileWalletAdapter(
+        connectionIdentity = ConnectionIdentity(
+            identityUri = solanaUri,
+            iconUri = iconUri,
+            identityName = identityName
+        )
+    )
+
+
+    Column(
+        verticalArrangement = Arrangement.SpaceAround,
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier
+            .fillMaxWidth(.8f)
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Start,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            TextPurpleMountainMajesty(
+                textContent = "Pay To:",
+                fontFamily = smoochSansFamily,
+                fontSize = 25.sp
+            )
+            Spacer(Modifier.width(10.dp))
+            TextWhite(
+                textContent = rustffiShortenBase58(discoveryItem.payTo),
+                fontFamily = commitMonoFamily,
+                fontSize = 20.sp
+            )
+        }
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Start,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            TextPurpleMountainMajesty(
+                textContent = "Fee Payer:",
+                fontFamily = smoochSansFamily,
+                fontSize = 25.sp
+            )
+            Spacer(Modifier.width(10.dp))
+            TextWhite(
+                textContent = if (discoveryItem.feePayer.isEmpty()) {
+                    "Me"
+                } else {
+                    rustffiShortenBase58(discoveryItem.feePayer)
+                },
+                fontFamily = commitMonoFamily,
+                fontSize = 20.sp
+            )
+        }
+
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Start,
+        ) {
+            Box {
+                Image(
+                    painter = rememberAsyncImagePainter(
+                        ImageRequest.Builder(LocalContext.current)
+                            .data(discoveryItem.logoUri)
+                            .crossfade(true).build()
+                    ),
+                    contentDescription = null,
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier
+                        .width(40.dp)
+                        .background(Licorice) // fallback if image fails to load
                 )
             }
 
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Start,
-            ) {
-                Box {
-                    Image(
-                        painter = rememberAsyncImagePainter(
-                            ImageRequest.Builder(LocalContext.current)
-                                .data(discoveryItem.logoUri)
-                                .crossfade(true).build()
-                        ),
-                        contentDescription = null,
-                        contentScale = ContentScale.Fit,
-                        modifier = Modifier
-                            .width(40.dp)
-                            .background(Licorice) // fallback if image fails to load
-                    )
-                }
+            Spacer(Modifier.width(5.dp))
+            val amount =
+                rustffiFormatAmount(discoveryItem.amount, discoveryItem.decimals?.toUByte())
+            AppText(
+                textContent = amount,
+                fontFamily = commitMonoFamily,
+                fontSize = 25.sp
+            )
 
-                Spacer(Modifier.width(5.dp))
-                val amount =
-                    rustffiFormatAmount(discoveryItem.amount, discoveryItem.decimals?.toUByte())
-                AppText(
-                    textContent = amount,
-                    fontFamily = commitMonoFamily,
-                    fontSize = 25.sp
+        }
+
+
+        Row(
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Checkbox(
+                checked = optimizeTransaction,
+                onCheckedChange = { optimizeTransaction = it },
+                colors = CheckboxDefaults.colors(
+                    checkedColor = HanPurple,          // fill when checked
+                    uncheckedColor = HanPurple,         // border when unchecked
+                    checkmarkColor = White,        // tick color
+                    disabledCheckedColor = Color.LightGray,
+                    disabledUncheckedColor = Color.DarkGray
                 )
+            )
+            TextPurpleMountainMajesty(textContent = "Optimize Transaction", fontSize = 16.sp)
+        }
 
-            }
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .fillMaxWidth()
+        ) {
+            ProgressGradientButton(
+                enabled = buttonEnabled.value,
+                callback = {
+                    buttonEnabled.value = false
+                    coroutineScope.launch {
+                        try {
+                            val resourceDetails = DiscoveryFfi(
+                                uriScheme = discoveryItem.uriScheme,
+                                uri = discoveryItem.uri,
+                                title = discoveryItem.title,
+                                description = discoveryItem.description,
+                                headerImage = discoveryItem.headerImage,
+                                amount = discoveryItem.amount,
+                                asset = discoveryItem.asset,
+                                payTo = discoveryItem.payTo,
+                                maxtimeoutSeconds = discoveryItem.maxTimeoutSeconds ?: "",
+                                feePayer = discoveryItem.feePayer,
+                                assetInfo = null
+                            )
+                            success.value = signTx(
+                                resourceDetails,
+                                optimizeTransaction,
+                                walletAdapter,
+                                sender
+                            )
+                        } catch (error: Exception) {
+                            appLog("OPTIMIZED TX ERROR: ${error.toString()}")
 
-
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Checkbox(
-                    checked = optimizeTransaction,
-                    onCheckedChange = { optimizeTransaction = it },
-                    colors = CheckboxDefaults.colors(
-                        checkedColor = HanPurple,          // fill when checked
-                        uncheckedColor = HanPurple,         // border when unchecked
-                        checkmarkColor = White,        // tick color
-                        disabledCheckedColor = Color.LightGray,
-                        disabledUncheckedColor = Color.DarkGray
-                    )
-                )
-                TextPurpleMountainMajesty(textContent = "Optimize Transaction", fontSize = 16.sp)
-            }
-
-            Box(
-                contentAlignment = Alignment.Center,
-                modifier = Modifier
-                    .fillMaxWidth()
-            ) {
-                ProgressGradientButton(
-                    enabled = buttonEnabled.value,
-                    callback = {
-                        buttonEnabled.value = false
-                        coroutineScope.launch {
-                            try {
-                                val resourceDetails = DiscoveryFfi(
-                                    uriScheme = discoveryItem.uriScheme,
-                                    uri = discoveryItem.uri,
-                                    title = discoveryItem.title,
-                                    description = discoveryItem.description,
-                                    headerImage = discoveryItem.headerImage,
-                                    amount = discoveryItem.amount,
-                                    asset = discoveryItem.asset,
-                                    payTo = discoveryItem.payTo,
-                                    maxtimeoutSeconds = discoveryItem.maxTimeoutSeconds ?: "",
-                                    feePayer = discoveryItem.feePayer,
-                                    assetInfo = null
-                                )
-                                success.value = signTx(
-                                    resourceDetails,
-                                    optimizeTransaction,
-                                    walletAdapter,
-                                    sender
-                                )
-                            } catch (error: Exception) {
-                                appLog("OPTIMIZED TX ERROR: ${error.toString()}")
-
-                                errorExists.value =
-                                    "Optimize transaction only works for Mainnet accounts that exist (are rent exempt). Error details: " + error.message
-                                showSheet.value = true
-                            }
+                            errorExists.value =
+                                "Optimize transaction only works for Mainnet accounts that exist (are rent exempt). Error details: " + error.message
+                            showSheet.value = true
                         }
-                    },
-                    textContent = "Pay with Solana",
-                    fillMaxWidth = 1f
-                )
-            }
+                    }
+                },
+                textContent = "Pay with Solana",
+                fillMaxWidth = 1f
+            )
         }
     }
 
@@ -602,7 +662,6 @@ fun DiscoveryItemView(
             { navController.navigate(DashboardRoute) })
 
     }
-
 }
 
 suspend fun signTx(

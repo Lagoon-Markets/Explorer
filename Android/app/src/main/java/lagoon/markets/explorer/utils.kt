@@ -30,9 +30,11 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
@@ -335,3 +337,19 @@ fun ErrorBottomSheet(
         }
     }
 }
+
+fun Modifier.bottomBorder(
+    color: Color = PurpleMountainMajesty,
+    thickness: Dp = 2.dp
+) = this.then(
+    Modifier.drawBehind {
+        val strokeWidth = thickness.toPx()
+        val y = size.height - strokeWidth / 2
+        drawLine(
+            color = color,
+            start = androidx.compose.ui.geometry.Offset(0f, y),
+            end = androidx.compose.ui.geometry.Offset(size.width, y),
+            strokeWidth = strokeWidth
+        )
+    }
+)

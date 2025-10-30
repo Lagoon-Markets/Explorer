@@ -1,10 +1,12 @@
 use std::borrow::Borrow;
 
 use camino::Utf8PathBuf;
-use redb::{Database, Error as RedbError, Key, ReadableDatabase, TableDefinition, Value};
+use redb::{
+    Database, Error as RedbError, Key, ReadableDatabase, ReadableTable, TableDefinition, Value,
+};
 use serde::Deserialize;
 
-use crate::{NativeError, NativeResult, SiwsAuthResult, APP_STORAGE};
+use crate::{NativeError, NativeResult, SiwsAuthResult, X402Data, X402Resource, APP_STORAGE};
 
 pub type RedbResult<T> = Result<T, RedbError>;
 
@@ -15,6 +17,7 @@ pub struct AppStorage {
 
 type UserProfileSchema = TableDefinition<'static, &'static str, Vec<u8>>;
 type AuthSchema = TableDefinition<'static, &'static str, Vec<u8>>;
+type X402Schema = TableDefinition<'static, [u8; 32], Vec<u8>>;
 type TasksSchema = TableDefinition<'static, &'static str, String>;
 type SubscriptionsSchema = TableDefinition<'static, &'static str, String>;
 
@@ -168,12 +171,94 @@ impl AppStorage {
     }
 }
 
+impl AppStorage {
+    const X402_TABLE: X402Schema = X402Schema::new("x402_data");
+
+    pub fn set_x402(&self, data: X402Data) -> NativeResult<()> {
+        let key = *blake3::hash(data.uri.as_bytes()).as_bytes();
+        let data_bytes =
+            wincode::serialize(&data).or(Err(NativeError::SerializeX402DataToBytes))?;
+
+        Ok(self.set(Self::X402_TABLE, key, data_bytes)?)
+    }
+
+    pub fn get_x402(&self, key: &str) -> NativeResult<Option<X402Resource>> {
+        let key = *blake3::hash(key.as_bytes()).as_bytes();
+
+        self.get(Self::X402_TABLE, key)
+            .map(|data| {
+                data.map(|inner| {
+                    wincode::deserialize::<X402Resource>(&inner.value())
+                        .or(Err(NativeError::DeserializeX402Resource))
+                })
+            })?
+            .transpose()
+    }
+
+    pub fn get_all(&self) -> NativeResult<Vec<X402Data>> {
+        if self.table_data_exists(Self::X402_TABLE)? == TableStatus::NotFound {
+            return Ok(Vec::default());
+        }
+
+        let table = self
+            .store
+            .begin_read()
+            .map_err(|error| {
+                let error: RedbError = error.into();
+
+                error
+            })?
+            .open_table(Self::X402_TABLE)
+            .map_err(|error| {
+                let error: RedbError = error.into();
+
+                error
+            })?;
+
+        let mut outcome = Vec::default();
+
+        while let Some(entry) = table
+            .iter()
+            .map_err(|error| {
+                let error: RedbError = error.into();
+
+                error
+            })?
+            .next()
+        {
+            let (_key, value) = entry.map_err(|error| {
+                let error: RedbError = error.into();
+
+                error
+            })?;
+
+            let value = wincode::deserialize::<X402Resource>(&value.value())
+                .or(Err(NativeError::DeserializeX402Resource))?;
+
+            outcome.push(value.data)
+        }
+
+        Ok(outcome)
+    }
+}
+
 #[derive(Debug, Deserialize, Clone)]
 pub struct SolanaTokenListMetadata {
     pub tokens: Vec<TokenInfo>,
 }
 
-#[derive(Debug, Clone, Deserialize, wincode::SchemaRead, wincode::SchemaWrite, uniffi::Record)]
+#[derive(
+    Debug,
+    Clone,
+    Deserialize,
+    PartialEq,
+    Eq,
+    PartialOrd,
+    Ord,
+    wincode::SchemaRead,
+    wincode::SchemaWrite,
+    uniffi::Record,
+)]
 #[allow(non_snake_case)]
 pub struct TokenInfo {
     pub chainId: u8,

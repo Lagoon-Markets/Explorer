@@ -44,15 +44,12 @@ impl EventEmitterFfi {
             };
 
             for event in event_source.receiver().iter() {
-                log_to_logcat(&event.id);
-
                 if event.id.as_bytes() == "done".as_bytes() {
                     log_to_logcat("DONE");
 
                     event_source.close();
                     break;
                 } else {
-                    log_to_logcat(&event.id);
                     log_to_logcat(&event.data);
 
                     let decoded = match serde_json::from_str::<EventSourceData>(&event.data) {
