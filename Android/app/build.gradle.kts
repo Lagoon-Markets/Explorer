@@ -73,21 +73,4 @@ dependencies {
     implementation("io.coil-kt.coil3:coil-compose:3.3.0")
     implementation("io.coil-kt.coil3:coil-network-okhttp:3.3.0")
 
-//    // ViewModel
-//    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.9.4")
-//    // ViewModel utilities for Compose
-//    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.9.4")
-//    // LiveData
-//    implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.9.4")
-//    // Lifecycles only (without ViewModel or LiveData)
-//    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.9.4")
-//    // Lifecycle utilities for Compose
-//    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.9.4")
-//
-//    // Saved state module for ViewModel
-//    implementation("androidx.lifecycle:lifecycle-viewmodel-savedstate:2.9.4")
-//
-//    // ViewModel integration with Navigation3
-//    implementation("androidx.lifecycle:lifecycle-viewmodel-navigation3:2.10.0-alpha05")
-
 }
