@@ -109,6 +109,42 @@ Example QR:
 ![x402-URI QR](./x402-URI.png)
 
 > Scan this QR and share the link to Firefox or Chrome. These browsers will prompt you to open the x402-URI with an installed app that supports handling x402-URIs.
+>
+
+## x402-URI Live Updates
+Platforms like `Android`, `iOS` and `HarmonyOS` implement live updates to give live feedback of ongoing events via notifications.
+
+URLs that support server-side events like agent-to-agent communication can simply define return JSON as part of the message data in the EventStream of an EventSource in server-sent events.
+
+```json
+{
+    "contentTitle": "<String>",
+    "contentText": "<String>",
+    "shortCriticalText": "<String>",
+    "progress": {
+        "point": <Int (u32::MAX)>,
+        "color": "<String>"
+    },
+    "isProgressIndeterminate": <Boolean>,
+    "actions": ["<String>"],
+    "style": {
+        "points": [
+            {
+                "point": <Int (u32::MAX)>,
+                "color": "<String>"
+            }
+        ],
+        "segments":[
+            {
+                "segment": <Int (u32::MAX)>,
+                "color": "<String>"
+            }
+        ]
+    }
+}
+
+```
+
 
 ## Summary
 The x402-URI improve the user experience for ordinary users opening up x402 payments anywhere on any website, app or QR-Code in the physical world. The services with the x402 resources no longer need to spend resources making users understand x402 payments. The user just taps on a button or scans a QR code.
