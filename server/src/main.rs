@@ -32,7 +32,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .mount("/", routes![latest_newsletter, mint_info])
         .mount(
             "/x402",
-            routes![x402_discover, optimize_tx, send_optimized_tx],
+            routes![
+                x402_discover,
+                voting_handler,
+                optimize_tx,
+                send_optimized_tx
+            ],
         )
         .launch()
         .await?;
