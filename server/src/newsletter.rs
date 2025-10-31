@@ -236,7 +236,7 @@ fn create_test_events() -> Vec<EventSourceData> {
     let preparing = EventSourceData {
         content_title: "Breakpoint 2026 is almost here".to_string(),
         content_text:
-            "Breakpoint is almost here. Toly the Great will launch his new book. It's gonna be epic"
+            "Breakpoint is almost here. Toly the Great will launch his new book. It is gonna be epic"
                 .to_string(),
         short_critical_text: "Breakpoint 2026".to_string(),
 
@@ -265,7 +265,7 @@ fn create_test_events() -> Vec<EventSourceData> {
 
     let arriving = EventSourceData {
         content_title: "Breakpoint 2026 is here".to_string(),
-        content_text: "Breakpoint 2026 is live. Toly the Great will launch his book today!"
+        content_text: "Breakpoint 2026 is live. Toly the Great will launch his book today"
             .to_string(),
         short_critical_text: "Breakpoint live".to_string(),
 
@@ -282,9 +282,9 @@ fn create_test_events() -> Vec<EventSourceData> {
     let delivered = EventSourceData {
         content_title: "Voting closed".to_string(),
         content_text:
-            "Toly the Great has launched his book `Building tokenized trading solutions`. You can get a copy now :)"
+            "Toly the Great has launched his book on Building tokenized trading solutions. You can get a copy now"
                 .to_string(),
-        short_critical_text: "Book launched :)".to_string(),
+        short_critical_text: "Book launched".to_string(),
 
         progress: EventSourceProgressPoint {
             point: 100,
